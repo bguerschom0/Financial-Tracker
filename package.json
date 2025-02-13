@@ -24,7 +24,6 @@
     "typescript": "^5.3.3"
   },
   "scripts": {
-  "scripts": {
     "start": "react-scripts start",
     "build": "GENERATE_SOURCEMAP=false react-scripts build",
     "test": "react-scripts test",

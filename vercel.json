@@ -1,4 +1,4 @@
-// vercel.json
+
 {
   "buildCommand": "npm run build",
   "devCommand": "npm run dev",

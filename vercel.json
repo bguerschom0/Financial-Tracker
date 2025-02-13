@@ -1,23 +1,8 @@
-
+// vercel.json
 {
-  "version": 2,
   "buildCommand": "npm run build",
-  "devCommand": "npm run start",
+  "devCommand": "npm run dev",
   "installCommand": "npm install",
-  "framework": "create-react-app",
-  "builds": [
-    {
-      "src": "package.json",
-      "use": "@vercel/node"
-    }
-  ],
-  "routes": [
-    {
-      "src": "/(.*)",
-      "dest": "/index.html"
-    }
-  ],
-  "env": {
-    "GENERATE_SOURCEMAP": "false"
-  }
+  "framework": "vite",
+  "outputDirectory": "dist"
 }

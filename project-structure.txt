@@ -1,0 +1,36 @@
+financial-tracker/
+├── src/                      # Source code
+│   ├── components/           # Reusable React components
+│   │   ├── layout/          # Layout components (Header, Sidebar, Footer)
+│   │   ├── ui/             # UI components (buttons, cards, inputs)
+│   │   ├── forms/          # Form components
+│   │   └── dashboard/      # Dashboard-specific components
+│   │
+│   ├── pages/              # Page components
+│   │   ├── dashboard/      # Dashboard page
+│   │   ├── income/        # Income management
+│   │   ├── expenses/      # Expenses tracking
+│   │   ├── debts/         # Debt management
+│   │   ├── savings/       # Savings goals
+│   │   └── settings/      # User settings
+│   │
+│   ├── lib/               # External library configurations
+│   │   ├── supabase.js    # Supabase client setup
+│   │   └── auth.js        # Authentication utilities
+│   │
+│   ├── hooks/             # Custom React hooks
+│   ├── styles/            # Global styles and CSS modules
+│   ├── utils/             # Helper functions and utilities
+│   ├── context/           # React Context providers
+│   ├── services/          # API and external service integrations
+│   │   ├── api/          # API functions
+│   │   └── supabase/     # Supabase service functions
+│   └── types/             # TypeScript type definitions
+│
+├── public/                # Static files
+├── .github/               # GitHub Actions and workflows
+├── package.json          # Project dependencies and scripts
+├── .gitignore           # Git ignore rules
+├── README.md            # Project documentation
+├── .env.local           # Local environment variables
+└── .env.example         # Example environment variables

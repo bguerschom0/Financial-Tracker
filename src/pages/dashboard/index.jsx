@@ -1,5 +1,6 @@
 // src/pages/dashboard/index.jsx
-import React from 'react';
+
+
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
 
 const DashboardPage = () => {

@@ -1,56 +1,63 @@
-/* src/styles/globals.css */
+// src/styles/globals.css
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
+  :root {
+    --header-height: 4rem;
+    --sidebar-width: 16rem;
+  }
+
+  html {
+    @apply h-full bg-gray-100;
+    -webkit-tap-highlight-color: transparent;
+  }
+  
   body {
-    @apply bg-gray-50 text-gray-900;
+    @apply h-full antialiased text-gray-900;
   }
-
-  h1 {
-    @apply text-4xl font-bold;
-  }
-
-  h2 {
-    @apply text-3xl font-bold;
-  }
-
-  h3 {
-    @apply text-2xl font-bold;
-  }
-
-  h4 {
-    @apply text-xl font-bold;
+  
+  #root {
+    @apply h-full;
   }
 }
 
 @layer components {
   .btn {
-    @apply px-4 py-2 rounded-md font-medium focus:outline-none focus:ring-2 focus:ring-offset-2;
+    @apply px-4 py-2 rounded-md font-medium transition-colors duration-200
+           focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50;
   }
-
+  
   .btn-primary {
-    @apply bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500;
+    @apply bg-primary-600 text-white hover:bg-primary-700 focus:ring-primary-500;
   }
-
-  .btn-secondary {
-    @apply bg-gray-200 text-gray-700 hover:bg-gray-300 focus:ring-gray-500;
+  
+  .input-field {
+    @apply block w-full rounded-md border-gray-300 shadow-sm
+           focus:border-primary-500 focus:ring-primary-500
+           disabled:bg-gray-100 disabled:cursor-not-allowed;
   }
-
+  
   .card {
-    @apply bg-white rounded-lg shadow-sm p-6;
-  }
-
-  .input {
-    @apply block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500;
+    @apply bg-white rounded-lg shadow-sm overflow-hidden;
   }
 }
 
-/* Custom scrollbar */
+/* Mobile-first responsive styles */
+@media (max-width: 640px) {
+  .container {
+    @apply px-4;
+  }
+  
+  .card {
+    @apply rounded-none shadow-none;
+  }
+}
+
+/* Custom scrollbar for webkit browsers */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  @apply w-2;
 }
 
 ::-webkit-scrollbar-track {
@@ -58,9 +65,5 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  @apply bg-gray-400 rounded-full;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  @apply bg-gray-500;
+  @apply bg-gray-300 rounded-full hover:bg-gray-400;
 }

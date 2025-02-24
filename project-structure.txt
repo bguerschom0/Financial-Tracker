@@ -34,3 +34,66 @@ financial-tracker/
 ├── README.md            # Project documentation
 ├── .env.local           # Local environment variables
 └── .env.example         # Example environment variables
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// Directory Structure
+financial-tracker/
+├── src/
+│   ├── components/
+│   │   ├── forms/
+│   │   │   ├── BudgetForm.jsx
+│   │   │   └── TransactionForm.jsx
+│   │   ├── layout/
+│   │   │   ├── MainLayout.jsx
+│   │   │   ├── Sidebar.jsx
+│   │   │   ├── Header.jsx
+│   │   │   └── Footer.jsx
+│   │   └── ui/
+│   │       ├── Button.jsx
+│   │       ├── Card.jsx
+│   │       ├── Input.jsx
+│   │       ├── Modal.jsx
+│   │       └── Select.jsx
+│   ├── context/
+│   │   ├── AuthContext.jsx
+│   │   ├── NotificationContext.jsx
+│   │   └── ThemeContext.jsx
+│   ├── hooks/
+│   │   ├── useAuth.js
+│   │   ├── useBudget.js
+│   │   ├── useLocalStorage.js
+│   │   └── useTransactions.js
+│   ├── lib/
+│   │   ├── api.js
+│   │   ├── auth.js
+│   │   └── supabase.js
+│   ├── pages/
+│   │   ├── dashboard/
+│   │   ├── income/
+│   │   ├── expenses/
+│   │   ├── debts/
+│   │   ├── savings/
+│   │   └── settings/
+│   ├── styles/
+│   │   └── globals.css
+│   ├── App.jsx
+│   └── main.jsx
+├── .env
+├── index.html
+├── package.json
+├── tailwind.config.js
+├── postcss.config.js
+└── vite.config.js

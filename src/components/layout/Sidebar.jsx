@@ -2,68 +2,82 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { 
-  Home,
-  DollarSign,
-  CreditCard,
-  Wallet,
-  PiggyBank,
-  Settings
+  Home, DollarSign, CreditCard, 
+  Wallet, PiggyBank, Settings, X 
 } from 'lucide-react';
 
-const Sidebar = ({ isOpen, setIsOpen }) => {
+const navigation = [
+  { name: 'Dashboard', href: '/app', icon: Home },
+  { name: 'Income', href: '/app/income', icon: DollarSign },
+  { name: 'Expenses', href: '/app/expenses', icon: CreditCard },
+  { name: 'Debts', href: '/app/debts', icon: Wallet },
+  { name: 'Savings', href: '/app/savings', icon: PiggyBank },
+  { name: 'Settings', href: '/app/settings', icon: Settings }
+];
+
+const Sidebar = ({ isOpen, onClose }) => {
   const location = useLocation();
-
-  const navigation = [
-    { name: 'Dashboard', href: '/', icon: Home },
-    { name: 'Income', href: '/income', icon: DollarSign },
-    { name: 'Expenses', href: '/expenses', icon: CreditCard },
-    { name: 'Debts', href: '/debts', icon: Wallet },
-    { name: 'Savings', href: '/savings', icon: PiggyBank },
-    { name: 'Settings', href: '/settings', icon: Settings },
-  ];
-
-  const isActive = (path) => location.pathname === path;
 
   return (
     <>
-      {/* Mobile Sidebar Backdrop */}
+      {/* Mobile backdrop */}
       {isOpen && (
-        <div
+        <div 
           className="fixed inset-0 z-40 bg-gray-600 bg-opacity-75 lg:hidden"
-          onClick={() => setIsOpen(false)}
+          onClick={onClose}
+          aria-hidden="true"
         />
       )}
 
       {/* Sidebar */}
-      <div
-        className={`fixed inset-y-0 left-0 z-50 w-64 bg-white transform transition-transform duration-300 ease-in-out lg:transform-none lg:relative ${
-          isOpen ? 'translate-x-0' : '-translate-x-full'
-        }`}
+      <div 
+        className={`
+          fixed inset-y-0 left-0 z-50 w-64 bg-white transform transition-transform 
+          duration-300 ease-in-out lg:transform-none lg:relative
+          ${isOpen ? 'translate-x-0' : '-translate-x-full'}
+        `}
       >
         <div className="h-full flex flex-col">
+          {/* Mobile close button */}
+          <div className="lg:hidden absolute right-2 top-2">
+            <button
+              onClick={onClose}
+              className="p-2 rounded-md text-gray-500 hover:text-gray-600 focus:outline-none"
+            >
+              <X size={20} />
+            </button>
+          </div>
+
           {/* Logo */}
-          <div className="h-16 flex items-center px-6 border-b border-gray-200">
-            <h1 className="text-xl font-bold text-gray-900">Financial Tracker</h1>
+          <div className="flex-shrink-0 px-6 py-4 flex items-center">
+            <DollarSign className="h-8 w-8 text-primary-600" />
+            <span className="ml-2 text-xl font-bold text-gray-900">
+              Financial Tracker
+            </span>
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 px-4 py-4 space-y-1">
+          <nav className="flex-1 px-4 py-4 space-y-1 overflow-y-auto">
             {navigation.map((item) => {
-              const Icon = item.icon;
+              const isActive = location.pathname === item.href;
               return (
                 <Link
                   key={item.name}
                   to={item.href}
-                  className={`${
-                    isActive(item.href)
-                      ? 'bg-blue-50 text-blue-600'
+                  className={`
+                    flex items-center px-3 py-2 rounded-md text-sm font-medium
+                    transition-colors duration-150 ease-in-out
+                    ${isActive 
+                      ? 'bg-primary-50 text-primary-600' 
                       : 'text-gray-600 hover:bg-gray-50'
-                  } group flex items-center px-2 py-2 text-sm font-medium rounded-md`}
+                    }
+                  `}
+                  onClick={() => onClose()}
                 >
-                  <Icon
-                    className={`${
-                      isActive(item.href) ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-500'
-                    } mr-3 h-5 w-5`}
+                  <item.icon 
+                    className={`h-5 w-5 mr-3 ${
+                      isActive ? 'text-primary-600' : 'text-gray-400'
+                    }`} 
                   />
                   {item.name}
                 </Link>

@@ -4,36 +4,67 @@ import React from 'react';
 const Select = ({
   label,
   error,
+  helperText,
   options = [],
   className = '',
+  id,
   ...props
 }) => {
+  const selectId = id || label?.toLowerCase().replace(/\s+/g, '-');
+
   return (
     <div className="w-full">
       {label && (
-        <label className="block text-sm font-medium text-gray-700 mb-1">
+        <label 
+          htmlFor={selectId}
+          className="block text-sm font-medium text-gray-700 mb-1"
+        >
           {label}
         </label>
       )}
-      <select
+      <div className="relative">
+        <select 
+                  id={selectId}
         className={`
-          block w-full rounded-md border-gray-300 shadow-sm
-          focus:border-blue-500 focus:ring-blue-500
+          block w-full rounded-md shadow-sm appearance-none
+          ${error 
+            ? 'border-red-300 focus:border-red-500 focus:ring-red-500' 
+            : 'border-gray-300 focus:border-primary-500 focus:ring-primary-500'
+          }
           disabled:bg-gray-100 disabled:cursor-not-allowed
-          ${error ? 'border-red-300' : ''}
           ${className}
         `}
+        aria-invalid={!!error}
+        aria-describedby={
+          error ? `${selectId}-error` : helperText ? `${selectId}-description` : undefined
+        }
         {...props}
       >
-        {options.map((option) => (
-          <option key={option.value} value={option.value}>
+        {options.map(option => (
+          <option 
+            key={option.value} 
+            value={option.value}
+            disabled={option.disabled}
+          >
             {option.label}
           </option>
         ))}
       </select>
-      {error && (
-        <p className="mt-1 text-sm text-red-600">{error}</p>
-      )}
+      {error ? (
+        <p 
+          id={`${selectId}-error`} 
+          className="mt-1 text-sm text-red-600"
+        >
+          {error}
+        </p>
+      ) : helperText ? (
+        <p 
+          id={`${selectId}-description`} 
+          className="mt-1 text-sm text-gray-500"
+        >
+          {helperText}
+        </p>
+      ) : null}
     </div>
   );
 };

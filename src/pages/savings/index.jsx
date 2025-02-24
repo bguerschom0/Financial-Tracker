@@ -1,19 +1,20 @@
 // src/pages/savings/index.jsx
 import React, { useState } from 'react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
+import { Plus, TrendingUp } from 'lucide-react';
+import { Card } from '../../components/ui/Card';
+import { Button } from '../../components/ui/Button';
+import { Modal } from '../../components/ui/Modal';
+import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
+import { Alert } from '../../components/ui/Alert';
+import { EmptyState } from '../../components/ui/EmptyState';
+import { formatCurrency, formatDate } from '../../utils/formatting';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 const SavingsPage = () => {
   const [showAddForm, setShowAddForm] = useState(false);
-  const [newSavingGoal, setNewSavingGoal] = useState({
-    name: '',
-    targetAmount: '',
-    currentAmount: '',
-    targetDate: '',
-    category: '',
-    monthlyContribution: ''
-  });
+  const [selectedGoal, setSelectedGoal] = useState(null);
 
-  // Sample data - replace with Supabase data
+  // Sample data - replace with actual API calls
   const savingsGoals = [
     {
       id: 1,
@@ -25,243 +26,171 @@ const SavingsPage = () => {
       monthlyContribution: 500,
       progress: 55
     },
-    {
-      id: 2,
-      name: 'New Car',
-      targetAmount: 25000,
-      currentAmount: 8000,
-      targetDate: '2026-06-30',
-      category: 'Vehicle',
-      monthlyContribution: 1000,
-      progress: 32
-    },
-    {
-      id: 3,
-      name: 'House Down Payment',
-      targetAmount: 50000,
-      currentAmount: 15000,
-      targetDate: '2027-01-31',
-      category: 'Housing',
-      monthlyContribution: 1500,
-      progress: 30
-    }
+    // ... other goals
   ];
 
-  // Sample progress data
+  // Progress data
   const progressData = [
     { month: 'Jan', savings: 4200 },
     { month: 'Feb', savings: 4800 },
     { month: 'Mar', savings: 5500 },
-    { month: 'Apr', savings: 6100 },
-    { month: 'May', savings: 6800 },
   ];
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    // Add logic to save to Supabase
-    console.log('New saving goal:', newSavingGoal);
+  const handleSubmit = (formData) => {
+    // Handle form submission
     setShowAddForm(false);
-    setNewSavingGoal({
-      name: '',
-      targetAmount: '',
-      currentAmount: '',
-      targetDate: '',
-      category: '',
-      monthlyContribution: ''
-    });
-  };
-
-  const calculateTotalSavings = () => {
-    return savingsGoals.reduce((total, goal) => total + goal.currentAmount, 0);
-  };
-
-  const calculateMonthlyContributions = () => {
-    return savingsGoals.reduce((total, goal) => total + goal.monthlyContribution, 0);
+    setSelectedGoal(null);
   };
 
   return (
-    <div className="p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold text-gray-800">Savings Goals</h2>
-        <button
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Savings Goals</h1>
+          <p className="mt-1 text-sm text-gray-500">
+            Track and manage your savings goals
+          </p>
+        </div>
+        <Button
           onClick={() => setShowAddForm(true)}
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+          className="sm:self-start"
         >
+          <Plus className="h-5 w-5 mr-2" />
           Add New Goal
-        </button>
+        </Button>
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h3 className="text-lg font-semibold text-gray-700">Total Savings</h3>
-          <p className="text-3xl font-bold text-green-600">${calculateTotalSavings().toLocaleString()}</p>
-        </div>
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h3 className="text-lg font-semibold text-gray-700">Monthly Contributions</h3>
-          <p className="text-3xl font-bold text-blue-600">${calculateMonthlyContributions().toLocaleString()}</p>
-        </div>
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h3 className="text-lg font-semibold text-gray-700">Active Goals</h3>
-          <p className="text-3xl font-bold text-purple-600">{savingsGoals.length}</p>
-        </div>
-      </div>
-
-      {/* Savings Progress Chart */}
-      <div className="bg-white p-6 rounded-lg shadow mb-6">
-        <h3 className="text-lg font-semibold text-gray-700 mb-4">Savings Progress</h3>
-        <div className="h-64">
-          <LineChart width={800} height={240} data={progressData}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="month" />
-            <YAxis />
-            <Tooltip />
-            <Legend />
-            <Line type="monotone" dataKey="savings" stroke="#10B981" name="Total Savings" />
-          </LineChart>
-        </div>
-      </div>
-
-      {/* Add Saving Goal Form Modal */}
-      {showAddForm && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center">
-          <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
-            <h3 className="text-xl font-semibold mb-4">Add New Saving Goal</h3>
-            <form onSubmit={handleSubmit}>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Goal Name</label>
-                  <input
-                    type="text"
-                    value={newSavingGoal.name}
-                    onChange={(e) => setNewSavingGoal({...newSavingGoal, name: e.target.value})}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Target Amount</label>
-                  <input
-                    type="number"
-                    value={newSavingGoal.targetAmount}
-                    onChange={(e) => setNewSavingGoal({...newSavingGoal, targetAmount: e.target.value})}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Current Amount</label>
-                  <input
-                    type="number"
-                    value={newSavingGoal.currentAmount}
-                    onChange={(e) => setNewSavingGoal({...newSavingGoal, currentAmount: e.target.value})}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Target Date</label>
-                  <input
-                    type="date"
-                    value={newSavingGoal.targetDate}
-                    onChange={(e) => setNewSavingGoal({...newSavingGoal, targetDate: e.target.value})}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Category</label>
-                  <select
-                    value={newSavingGoal.category}
-                    onChange={(e) => setNewSavingGoal({...newSavingGoal, category: e.target.value})}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                    required
-                  >
-                    <option value="">Select category</option>
-                    <option value="Emergency">Emergency Fund</option>
-                    <option value="Housing">Housing</option>
-                    <option value="Vehicle">Vehicle</option>
-                    <option value="Education">Education</option>
-                    <option value="Vacation">Vacation</option>
-                    <option value="Retirement">Retirement</option>
-                    <option value="Other">Other</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Monthly Contribution</label>
-                  <input
-                    type="number"
-                    value={newSavingGoal.monthlyContribution}
-                    onChange={(e) => setNewSavingGoal({...newSavingGoal, monthlyContribution: e.target.value})}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                    required
-                  />
-                </div>
-              </div>
-              <div className="mt-6 flex justify-end space-x-3">
-                <button
-                  type="button"
-                  onClick={() => setShowAddForm(false)}
-                  className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-                >
-                  Save
-                </button>
-              </div>
-            </form>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card>
+          <div className="space-y-1">
+            <h3 className="text-lg font-medium text-gray-700">Total Savings</h3>
+            <p className="text-3xl font-bold text-primary-600">
+              {formatCurrency(5500)}
+            </p>
           </div>
+        </Card>
+
+        <Card>
+          <div className="space-y-1">
+            <h3 className="text-lg font-medium text-gray-700">Monthly Goal</h3>
+            <p className="text-3xl font-bold text-green-600">
+              {formatCurrency(500)}
+            </p>
+          </div>
+        </Card>
+
+        <Card>
+          <div className="space-y-1">
+            <h3 className="text-lg font-medium text-gray-700">Active Goals</h3>
+            <p className="text-3xl font-bold text-blue-600">3</p>
+          </div>
+        </Card>
+      </div>
+
+      {/* Progress Chart */}
+      <Card title="Savings Progress">
+        <div className="h-[300px] sm:h-[400px]">
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={progressData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="month" />
+              <YAxis />
+              <Tooltip />
+              <Legend />
+              <Line 
+                type="monotone" 
+                dataKey="savings" 
+                stroke="#10B981" 
+                name="Total Savings" 
+              />
+            </LineChart>
+          </ResponsiveContainer>
         </div>
-      )}
+      </Card>
 
       {/* Savings Goals List */}
-      <div className="bg-white rounded-lg shadow">
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead>
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Goal</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Category</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Target</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Current</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Progress</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Monthly</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Target Date</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {savingsGoals.map((goal) => (
-                <tr key={goal.id}>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{goal.name}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{goal.category}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${goal.targetAmount.toLocaleString()}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-green-600">${goal.currentAmount.toLocaleString()}</td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="w-full bg-gray-200 rounded-full h-2.5">
-                      <div
-                        className="bg-green-600 h-2.5 rounded-full"
-                        style={{ width: `${goal.progress}%` }}
-                      ></div>
-                    </div>
-                    <span className="text-sm text-gray-600">{goal.progress}%</span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${goal.monthlyContribution}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{goal.targetDate}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    <button className="text-blue-600 hover:text-blue-800 mr-3">Edit</button>
-                    <button className="text-red-600 hover:text-red-800">Delete</button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      <Card>
+        {savingsGoals.length === 0 ? (
+          <EmptyState
+            title="No savings goals"
+            description="Start by creating your first savings goal"
+            icon={TrendingUp}
+            action={
+              <Button onClick={() => setShowAddForm(true)}>
+                <Plus className="h-5 w-5 mr-2" />
+                Add Goal
+              </Button>
+            }
+          />
+        ) : (
+          <div className="space-y-4">
+            {savingsGoals.map((goal) => (
+              <div 
+                key={goal.id}
+                className="border rounded-lg p-4 hover:bg-gray-50 transition-colors"
+              >
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                  <div>
+                    <h4 className="text-lg font-medium text-gray-900">
+                      {goal.name}
+                    </h4>
+                    <p className="text-sm text-gray-500">{goal.category}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-lg font-medium text-gray-900">
+                      {formatCurrency(goal.currentAmount)} / {formatCurrency(goal.targetAmount)}
+                    </p>
+                    <p className="text-sm text-gray-500">
+                      Target date: {formatDate(goal.targetDate)}
+                    </p>
+                  </div>
+                </div>
+                <div className="mt-4">
+                  <div className="w-full bg-gray-200 rounded-full h-2.5">
+                    <div
+                      className="bg-green-600 h-2.5 rounded-full transition-all duration-300"
+                      style={{ width: `${goal.progress}%` }}
+                    />
+                  </div>
+                  <div className="mt-2 flex justify-between text-sm text-gray-500">
+                    <span>{goal.progress}% complete</span>
+                    <span>Monthly: {formatCurrency(goal.monthlyContribution)}</span>
+                  </div>
+                </div>
+                <div className="mt-4 flex justify-end space-x-2">
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => setSelectedGoal(goal)}
+                  >
+                    Edit
+                  </Button>
+                  <Button
+                    variant="danger"
+                    size="sm"
+                  >
+                    Delete
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </Card>
+
+      {/* Add/Edit Modal */}
+      <Modal
+        isOpen={showAddForm}
+        onClose={() => {
+          setShowAddForm(false);
+          setSelectedGoal(null);
+        }}
+        title={selectedGoal ? 'Edit Savings Goal' : 'Add Savings Goal'}
+      >
+        {/* Form content */}
+      </Modal>
     </div>
   );
 };

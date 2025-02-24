@@ -1,10 +1,10 @@
 // src/pages/settings/index.jsx
 import React, { useState } from 'react';
-import { Card } from '../../components/ui/Card';
-import { Button } from '../../components/ui/Button';
-import { Input } from '../../components/ui/Input';
-import { Select } from '../../components/ui/Select';
-import { Alert } from '../../components/ui/Alert';
+import  Card  from '../../components/ui/Card';
+import  Button  from '../../components/ui/Button';
+import  Input  from '../../components/ui/Input';
+import  Select  from '../../components/ui/Select';
+import  Alert  from '../../components/ui/Alert';
 import { useAuth } from '../../hooks/useAuth';
 import { useNotification } from '../../hooks/useNotification';
 

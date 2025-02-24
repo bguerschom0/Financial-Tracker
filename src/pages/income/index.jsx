@@ -1,12 +1,12 @@
 // src/pages/income/index.jsx
 import React, { useState } from 'react';
 import { Plus } from 'lucide-react';
-import { Card } from '../../components/ui/Card';
-import { Button } from '../../components/ui/Button';
-import { Modal } from '../../components/ui/Modal';
-import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
-import { Alert } from '../../components/ui/Alert';
-import { EmptyState } from '../../components/ui/EmptyState';
+import  Card  from '../../components/ui/Card';
+import  Button  from '../../components/ui/Button';
+import  Modal  from '../../components/ui/Modal';
+import  LoadingSpinner  from '../../components/ui/LoadingSpinner';
+import  Alert  from '../../components/ui/Alert';
+import  EmptyState  from '../../components/ui/EmptyState';
 import { useTransactions } from '../../hooks/useTransactions';
 import { formatCurrency, formatDate } from '../../utils/formatting';
 import TransactionForm from '../../components/forms/TransactionForm';

@@ -11,7 +11,6 @@ const Select = ({
   ...props
 }) => {
   const selectId = id || label?.toLowerCase().replace(/\s+/g, '-');
-
   return (
     <div className="w-full">
       {label && (
@@ -24,32 +23,33 @@ const Select = ({
       )}
       <div className="relative">
         <select 
-                  id={selectId}
-        className={`
-          block w-full rounded-md shadow-sm appearance-none
-          ${error 
-            ? 'border-red-300 focus:border-red-500 focus:ring-red-500' 
-            : 'border-gray-300 focus:border-primary-500 focus:ring-primary-500'
+          id={selectId}
+          className={`
+            block w-full rounded-md shadow-sm appearance-none
+            ${error 
+              ? 'border-red-300 focus:border-red-500 focus:ring-red-500' 
+              : 'border-gray-300 focus:border-primary-500 focus:ring-primary-500'
+            }
+            disabled:bg-gray-100 disabled:cursor-not-allowed
+            ${className}
+          `}
+          aria-invalid={!!error}
+          aria-describedby={
+            error ? `${selectId}-error` : helperText ? `${selectId}-description` : undefined
           }
-          disabled:bg-gray-100 disabled:cursor-not-allowed
-          ${className}
-        `}
-        aria-invalid={!!error}
-        aria-describedby={
-          error ? `${selectId}-error` : helperText ? `${selectId}-description` : undefined
-        }
-        {...props}
-      >
-        {options.map(option => (
-          <option 
-            key={option.value} 
-            value={option.value}
-            disabled={option.disabled}
-          >
-            {option.label}
-          </option>
-        ))}
-      </select>
+          {...props}
+        >
+          {options.map(option => (
+            <option 
+              key={option.value} 
+              value={option.value}
+              disabled={option.disabled}
+            >
+              {option.label}
+            </option>
+          ))}
+        </select>
+      </div>
       {error ? (
         <p 
           id={`${selectId}-error`} 

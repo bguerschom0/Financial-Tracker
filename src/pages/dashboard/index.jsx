@@ -1,7 +1,7 @@
 // src/pages/dashboard/index.jsx
 import React, { useState, useEffect } from 'react';
 import { Card } from '../../components/ui/Card';
-import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
+import  LoadingSpinner  from '../../components/ui/LoadingSpinner';
 import { Alert } from '../../components/ui/Alert';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { useTransactions } from '../../hooks/useTransactions';

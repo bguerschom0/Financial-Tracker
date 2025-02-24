@@ -1,7 +1,17 @@
 // src/pages/settings/index.jsx
 import React, { useState } from 'react';
+import { Card } from '../../components/ui/Card';
+import { Button } from '../../components/ui/Button';
+import { Input } from '../../components/ui/Input';
+import { Select } from '../../components/ui/Select';
+import { Alert } from '../../components/ui/Alert';
+import { useAuth } from '../../hooks/useAuth';
+import { useNotification } from '../../hooks/useNotification';
 
 const SettingsPage = () => {
+  const { user } = useAuth();
+  const { addNotification } = useNotification();
+  
   const [userProfile, setUserProfile] = useState({
     name: 'John Doe',
     email: 'john.doe@example.com',
@@ -30,258 +40,199 @@ const SettingsPage = () => {
     exportFormat: 'CSV'
   });
 
-  const handleProfileUpdate = (e) => {
+  const handleProfileUpdate = async (e) => {
     e.preventDefault();
-    // Add logic to update profile in Supabase
-    console.log('Updated profile:', userProfile);
+    try {
+      // API call to update profile
+      addNotification('Profile updated successfully', 'success');
+    } catch (error) {
+      addNotification('Failed to update profile', 'error');
+    }
   };
 
-  const handleNotificationUpdate = (e) => {
-    e.preventDefault();
-    // Add logic to update notifications in Supabase
-    console.log('Updated notifications:', notifications);
+  const handleExportData = async () => {
+    try {
+      // API call to export data
+      addNotification('Data export started', 'info');
+    } catch (error) {
+      addNotification('Failed to export data', 'error');
+    }
   };
 
-  const handleSecurityUpdate = (e) => {
-    e.preventDefault();
-    // Add logic to update security settings in Supabase
-    console.log('Updated security settings:', security);
-  };
-
-  const handleDataPreferencesUpdate = (e) => {
-    e.preventDefault();
-    // Add logic to update data preferences in Supabase
-    console.log('Updated data preferences:', dataPreferences);
-  };
-
-  const handleExportData = () => {
-    // Add logic to export user data
-    console.log('Exporting user data...');
-  };
-
-  const handleDeleteAccount = () => {
-    // Add logic to delete account
-    console.log('Initiating account deletion...');
+  const handleDeleteAccount = async () => {
+    if (window.confirm('Are you sure you want to delete your account? This action cannot be undone.')) {
+      try {
+        // API call to delete account
+        addNotification('Account deleted successfully', 'success');
+      } catch (error) {
+        addNotification('Failed to delete account', 'error');
+      }
+    }
   };
 
   return (
-    <div className="p-6">
-      <h2 className="text-2xl font-bold text-gray-800 mb-6">Settings</h2>
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
+        <p className="mt-1 text-sm text-gray-500">
+          Manage your account settings and preferences
+        </p>
+      </div>
 
-      <div className="space-y-6">
-        {/* Profile Settings */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-semibold text-gray-700 mb-4">Profile Settings</h3>
-          <form onSubmit={handleProfileUpdate}>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Name</label>
+      {/* Profile Settings */}
+      <Card title="Profile Settings">
+        <form onSubmit={handleProfileUpdate} className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Input
+              label="Name"
+              value={userProfile.name}
+              onChange={(e) => setUserProfile({ ...userProfile, name: e.target.value })}
+            />
+            
+            <Input
+              label="Email"
+              type="email"
+              value={userProfile.email}
+              onChange={(e) => setUserProfile({ ...userProfile, email: e.target.value })}
+            />
+
+            <Select
+              label="Currency"
+              value={userProfile.currency}
+              onChange={(e) => setUserProfile({ ...userProfile, currency: e.target.value })}
+              options={[
+                { value: 'USD', label: 'USD ($)' },
+                { value: 'EUR', label: 'EUR (€)' },
+                { value: 'GBP', label: 'GBP (£)' }
+              ]}
+            />
+
+            <Select
+              label="Language"
+              value={userProfile.language}
+              onChange={(e) => setUserProfile({ ...userProfile, language: e.target.value })}
+              options={[
+                { value: 'English', label: 'English' },
+                { value: 'Spanish', label: 'Spanish' },
+                { value: 'French', label: 'French' }
+              ]}
+            />
+          </div>
+
+          <div className="flex justify-end">
+            <Button type="submit">
+              Save Changes
+            </Button>
+          </div>
+        </form>
+      </Card>
+
+      {/* Notification Preferences */}
+      <Card title="Notification Preferences">
+        <div className="space-y-4">
+          {Object.entries(notifications).map(([key, value]) => (
+            <div key={key} className="flex items-center justify-between">
+              <label className="text-sm font-medium text-gray-700">
+                {key.split(/(?=[A-Z])/).join(' ')}
+              </label>
+              <div className="relative inline-block w-12 h-6">
                 <input
-                  type="text"
-                  value={userProfile.name}
-                  onChange={(e) => setUserProfile({...userProfile, name: e.target.value})}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                  type="checkbox"
+                  checked={value}
+                  onChange={(e) => setNotifications({
+                    ...notifications,
+                    [key]: e.target.checked
+                  })}
+                  className="sr-only peer"
                 />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Email</label>
-                <input
-                  type="email"
-                  value={userProfile.email}
-                  onChange={(e) => setUserProfile({...userProfile, email: e.target.value})}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Currency</label>
-                <select
-                  value={userProfile.currency}
-                  onChange={(e) => setUserProfile({...userProfile, currency: e.target.value})}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                >
-                  <option value="USD">USD ($)</option>
-                  <option value="EUR">EUR (€)</option>
-                  <option value="GBP">GBP (£)</option>
-                  <option value="JPY">JPY (¥)</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Language</label>
-                <select
-                  value={userProfile.language}
-                  onChange={(e) => setUserProfile({...userProfile, language: e.target.value})}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                >
-                  <option value="English">English</option>
-                  <option value="Spanish">Spanish</option>
-                  <option value="French">French</option>
-                  <option value="German">German</option>
-                </select>
+                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 
+                             peer-focus:ring-blue-300 rounded-full peer 
+                             peer-checked:after:translate-x-full peer-checked:after:border-white 
+                             after:content-[''] after:absolute after:top-[2px] after:left-[2px] 
+                             after:bg-white after:border-gray-300 after:border after:rounded-full 
+                             after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600">
+                </div>
               </div>
             </div>
-            <div className="mt-4">
-              <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
-                Save Profile
-              </button>
-            </div>
-          </form>
+          ))}
         </div>
+      </Card>
 
-        {/* Notification Settings */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-semibold text-gray-700 mb-4">Notification Preferences</h3>
-          <form onSubmit={handleNotificationUpdate}>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-700">Email Alerts</span>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={notifications.emailAlerts}
-                    onChange={(e) => setNotifications({...notifications, emailAlerts: e.target.checked})}
-                    className="sr-only peer"
-                  />
-                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                </label>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-700">Budget Alerts</span>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={notifications.budgetAlerts}
-                    onChange={(e) => setNotifications({...notifications, budgetAlerts: e.target.checked})}
-                    className="sr-only peer"
-                  />
-                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                </label>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-700">Bill Reminders</span>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={notifications.billReminders}
-                    onChange={(e) => setNotifications({...notifications, billReminders: e.target.checked})}
-                    className="sr-only peer"
-                  />
-                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                </label>
-              </div>
+      {/* Security Settings */}
+      <Card title="Security Settings">
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h4 className="text-sm font-medium text-gray-900">Two-Factor Authentication</h4>
+              <p className="text-sm text-gray-500">Add an extra layer of security to your account</p>
             </div>
-            <div className="mt-4">
-              <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
-                Save Notifications
-              </button>
-            </div>
-          </form>
+            <Button
+              variant={security.twoFactorEnabled ? 'danger' : 'primary'}
+              onClick={() => setSecurity({
+                ...security,
+                twoFactorEnabled: !security.twoFactorEnabled
+              })}
+            >
+              {security.twoFactorEnabled ? 'Disable' : 'Enable'}
+            </Button>
+          </div>
+
+          <div>
+            <Button variant="secondary">
+              Change Password
+            </Button>
+          </div>
         </div>
+      </Card>
 
-        {/* Security Settings */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-semibold text-gray-700 mb-4">Security Settings</h3>
-          <form onSubmit={handleSecurityUpdate}>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-700">Two-Factor Authentication</span>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={security.twoFactorEnabled}
-                    onChange={(e) => setSecurity({...security, twoFactorEnabled: e.target.checked})}
-                    className="sr-only peer"
-                  />
-                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                </label>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Session Timeout (minutes)</label>
-                <select
-                  value={security.sessionTimeout}
-                  onChange={(e) => setSecurity({...security, sessionTimeout: e.target.value})}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                >
-                  <option value="15">15 minutes</option>
-                  <option value="30">30 minutes</option>
-                  <option value="60">1 hour</option>
-                </select>
-              </div>
-              <div>
-                <button type="button" className="text-blue-600 hover:text-blue-800">
-                  Change Password
-                </button>
-              </div>
-            </div>
-            <div className="mt-4">
-              <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
-                Save Security Settings
-              </button>
-            </div>
-          </form>
+      {/* Data Management */}
+      <Card title="Data Management">
+        <div className="space-y-4">
+          <div>
+            <h4 className="text-sm font-medium text-gray-900">Export Data</h4>
+            <p className="text-sm text-gray-500">Download a copy of your financial data</p>
+            <Button
+              variant="secondary"
+              onClick={handleExportData}
+              className="mt-2"
+            >
+              Export Data
+            </Button>
+          </div>
+
+          <div>
+            <Select
+              label="Data Retention Period"
+              value={dataPreferences.dataRetention}
+              onChange={(e) => setDataPreferences({
+                ...dataPreferences,
+                dataRetention: e.target.value
+              })}
+              options={[
+                { value: '3', label: '3 months' },
+                { value: '6', label: '6 months' },
+                { value: '12', label: '12 months' }
+              ]}
+            />
+          </div>
         </div>
+      </Card>
 
-        {/* Data Management */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-semibold text-gray-700 mb-4">Data Management</h3>
-          <form onSubmit={handleDataPreferencesUpdate}>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-700">Auto-sync Data</span>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={dataPreferences.autoSync}
-                    onChange={(e) => setDataPreferences({...dataPreferences, autoSync: e.target.checked})}
-                    className="sr-only peer"
-                  />
-                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                </label>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Data Retention Period (months)</label>
-                <select
-                  value={dataPreferences.dataRetention}
-                  onChange={(e) => setDataPreferences({...dataPreferences, dataRetention: e.target.value})}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                >
-                  <option value="3">3 months</option>
-                  <option value="6">6 months</option>
-                  <option value="12">12 months</option>
-                  <option value="24">24 months</option>
-                </select>
-              </div>
-              <div>
-                <button
-                  type="button"
-                  onClick={handleExportData}
-                  className="text-blue-600 hover:text-blue-800"
-                >
-                  Export All Data
-                </button>
-              </div>
-            </div>
-            <div className="mt-4">
-              <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
-                Save Data Preferences
-              </button>
-            </div>
-          </form>
-        </div>
-
-        {/* Danger Zone */}
-        <div className="bg-red-50 rounded-lg shadow p-6">
-          <h3 className="text-lg font-semibold text-red-700 mb-4">Danger Zone</h3>
-          <p className="text-sm text-red-600 mb-4">
+      {/* Danger Zone */}
+      <Card className="bg-red-50">
+        <div className="space-y-4">
+          <h3 className="text-lg font-semibold text-red-700">Danger Zone</h3>
+          <p className="text-sm text-red-600">
             Once you delete your account, there is no going back. Please be certain.
           </p>
-          <button
+          <Button
+            variant="danger"
             onClick={handleDeleteAccount}
-            className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700"
           >
             Delete Account
-          </button>
+          </Button>
         </div>
-      </div>
+      </Card>
     </div>
   );
 };

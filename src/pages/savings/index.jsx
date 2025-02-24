@@ -1,12 +1,12 @@
 // src/pages/savings/index.jsx
 import React, { useState } from 'react';
 import { Plus, TrendingUp } from 'lucide-react';
-import { Card } from '../../components/ui/Card';
-import { Button } from '../../components/ui/Button';
-import { Modal } from '../../components/ui/Modal';
-import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
-import { Alert } from '../../components/ui/Alert';
-import { EmptyState } from '../../components/ui/EmptyState';
+import  Card  from '../../components/ui/Card';
+import  Button  from '../../components/ui/Button';
+import  Modal  from '../../components/ui/Modal';
+import  LoadingSpinner  from '../../components/ui/LoadingSpinner';
+import  Alert  from '../../components/ui/Alert';
+import  EmptyState  from '../../components/ui/EmptyState';
 import { formatCurrency, formatDate } from '../../utils/formatting';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 

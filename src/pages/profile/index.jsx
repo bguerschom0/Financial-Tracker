@@ -1,10 +1,10 @@
 // src/pages/profile/index.jsx
 import React, { useState } from 'react';
-import { Card } from '../../components/ui/Card';
-import { Button } from '../../components/ui/Button';
-import { Input } from '../../components/ui/Input';
-import { Badge } from '../../components/ui/Badge';
-import { Alert } from '../../components/ui/Alert';
+import  Card  from '../../components/ui/Card';
+import  Button  from '../../components/ui/Button';
+import  Input  from '../../components/ui/Input';
+import  Badge  from '../../components/ui/Badge';
+import  Alert  from '../../components/ui/Alert';
 import { useAuth } from '../../hooks/useAuth';
 import { Camera, Key, Shield, Bell } from 'lucide-react';
 

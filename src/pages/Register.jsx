@@ -1,23 +1,44 @@
 // src/pages/Register.jsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { DollarSign, Check } from 'lucide-react';
-import { Button } from '../components/ui';
+import { DollarSign, Check, X } from 'lucide-react';
+import { Button, Modal } from '../components/ui';
 import { useAuth } from '../hooks/useAuth';
 import { useNotification } from '../hooks/useNotification';
 
 const Register = () => {
   const [formData, setFormData] = useState({
     fullName: '',
-    email: '',
+    username: '',
     password: '',
     confirmPassword: ''
   });
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState({});
+  const [showTermsModal, setShowTermsModal] = useState(false);
   const { signUp } = useAuth();
   const { addNotification } = useNotification();
   const navigate = useNavigate();
+
+  // Generate username based on full name
+  useEffect(() => {
+    if (formData.fullName) {
+      // Remove spaces, special characters, take first 8 chars or pad if needed
+      const nameBase = formData.fullName.toLowerCase()
+        .replace(/[^a-z0-9]/gi, '')
+        .substring(0, 8);
+      
+      // Ensure username is exactly 8 characters
+      let username = nameBase;
+      if (username.length < 8) {
+        // Pad with numbers if needed
+        const padding = Math.random().toString().substring(2, 10);
+        username = username + padding.substring(0, 8 - username.length);
+      }
+      
+      setFormData(prev => ({ ...prev, username }));
+    }
+  }, [formData.fullName]);
 
   const validateForm = () => {
     const newErrors = {};
@@ -26,10 +47,8 @@ const Register = () => {
       newErrors.fullName = 'Full name is required';
     }
     
-    if (!formData.email.trim()) {
-      newErrors.email = 'Email is required';
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = 'Email is invalid';
+    if (!formData.username.trim() || formData.username.length !== 8) {
+      newErrors.username = 'Username must be 8 characters';
     }
     
     if (!formData.password) {
@@ -71,15 +90,17 @@ const Register = () => {
     
     try {
       setIsLoading(true);
+      
+      // Save to Fusers table in database
       await signUp({
-        email: formData.email,
+        username: formData.username,
         password: formData.password,
         metadata: {
           full_name: formData.fullName
         }
       });
       
-      addNotification('Account created successfully! Please check your email to verify your account.', 'success');
+      addNotification('Account created successfully!', 'success');
       navigate('/login');
     } catch (error) {
       console.error('Registration error:', error);
@@ -87,6 +108,11 @@ const Register = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleTermsClick = (e) => {
+    e.preventDefault();
+    setShowTermsModal(true);
   };
 
   // Password strength indicators
@@ -140,25 +166,21 @@ const Register = () => {
             </div>
 
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                Email address
+              <label htmlFor="username" className="block text-sm font-medium text-gray-700">
+                Username (auto-generated)
               </label>
               <div className="mt-1">
                 <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  required
-                  value={formData.email}
-                  onChange={handleChange}
-                  className={`appearance-none block w-full px-3 py-2 border ${
-                    errors.email ? 'border-red-300' : 'border-gray-300'
-                  } rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm`}
+                  id="username"
+                  name="username"
+                  type="text"
+                  value={formData.username}
+                  readOnly
+                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-50 sm:text-sm"
                 />
-                {errors.email && (
-                  <p className="mt-2 text-sm text-red-600">{errors.email}</p>
-                )}
+                <p className="mt-1 text-xs text-gray-500">
+                  Your username is automatically generated from your name
+                </p>
               </div>
             </div>
 
@@ -242,7 +264,7 @@ const Register = () => {
               />
               <label htmlFor="terms" className="ml-2 block text-sm text-gray-900">
                 I agree to the{' '}
-                <a href="#" className="font-medium text-primary-600 hover:text-primary-500">
+                <a href="#" onClick={handleTermsClick} className="font-medium text-primary-600 hover:text-primary-500">
                   Terms and Conditions
                 </a>
               </label>
@@ -260,6 +282,19 @@ const Register = () => {
           </form>
         </div>
       </div>
+
+      {/* Terms and Conditions Modal */}
+      <Modal
+        isOpen={showTermsModal}
+        onClose={() => setShowTermsModal(false)}
+        title="Terms and Conditions"
+      >
+        <div className="p-4 text-center">
+          <p className="text-lg font-medium mb-4">We are still working on our Terms and Conditions.</p>
+          <p className="text-gray-500 mb-6">Please check back later for updates.</p>
+          <Button onClick={() => setShowTermsModal(false)}>Close</Button>
+        </div>
+      </Modal>
     </div>
   );
 };

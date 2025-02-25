@@ -29,15 +29,15 @@ useEffect(() => {
     let username = '';
     
     if (nameParts.length > 1) {
-      // Multiple names: Take 5 from first name and 3 from last name
+      // Multiple names: Take 6 from first name and 2 from last name
       const firstName = nameParts[0];
       const lastName = nameParts[nameParts.length - 1];
       
-      // Get first 5 characters from first name (or as many as available)
-      const firstPart = firstName.substring(0, Math.min(5, firstName.length));
+      // Get first 6 characters from first name (or as many as available)
+      const firstPart = firstName.substring(0, Math.min(6, firstName.length));
       
-      // Get first 3 characters from last name (or as many as available)
-      const lastPart = lastName.substring(0, Math.min(3, lastName.length));
+      // Get first 2 characters from last name (or as many as available)
+      const lastPart = lastName.substring(0, Math.min(2, lastName.length));
       
       // Combine the parts
       username = firstPart + lastPart;

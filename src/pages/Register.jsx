@@ -21,24 +21,47 @@ const Register = () => {
   const navigate = useNavigate();
 
   // Generate username based on full name
-  useEffect(() => {
-    if (formData.fullName) {
-      // Remove spaces, special characters, take first 8 chars or pad if needed
-      const nameBase = formData.fullName.toLowerCase()
-        .replace(/[^a-z0-9]/gi, '')
-        .substring(0, 8);
+useEffect(() => {
+  if (formData.fullName) {
+    // Split the full name into parts
+    const nameParts = formData.fullName.trim().split(/\s+/);
+    
+    let username = '';
+    
+    if (nameParts.length > 1) {
+      // Multiple names: Take 5 from first name and 3 from last name
+      const firstName = nameParts[0];
+      const lastName = nameParts[nameParts.length - 1];
       
-      // Ensure username is exactly 8 characters
-      let username = nameBase;
-      if (username.length < 8) {
-        // Pad with numbers if needed
-        const padding = Math.random().toString().substring(2, 10);
-        username = username + padding.substring(0, 8 - username.length);
-      }
+      // Get first 5 characters from first name (or as many as available)
+      const firstPart = firstName.substring(0, Math.min(5, firstName.length));
       
-      setFormData(prev => ({ ...prev, username }));
+      // Get first 3 characters from last name (or as many as available)
+      const lastPart = lastName.substring(0, Math.min(3, lastName.length));
+      
+      // Combine the parts
+      username = firstPart + lastPart;
+    } else {
+      // Single name: Use up to 8 characters from it
+      username = nameParts[0].substring(0, Math.min(8, nameParts[0].length));
     }
-  }, [formData.fullName]);
+    
+    // Remove special characters and spaces
+    username = username.toLowerCase().replace(/[^a-z0-9]/gi, '');
+    
+    // Ensure username is exactly 8 characters
+    if (username.length < 8) {
+      // Pad with random numbers if needed
+      const padding = Math.random().toString().substring(2, 10);
+      username = username + padding.substring(0, 8 - username.length);
+    } else if (username.length > 8) {
+      // Truncate if longer than 8
+      username = username.substring(0, 8);
+    }
+    
+    setFormData(prev => ({ ...prev, username }));
+  }
+}, [formData.fullName]);
 
   const validateForm = () => {
     const newErrors = {};

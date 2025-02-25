@@ -13,6 +13,8 @@ const SavingsPage = React.lazy(() => import('./pages/savings'));
 const SettingsPage = React.lazy(() => import('./pages/settings'));
 const LandingPage = React.lazy(() => import('./pages/LandingPage'));
 const NotFound = React.lazy(() => import('./pages/NotFound'));
+const Login = React.lazy(() => import('./pages/Login'));
+const Register = React.lazy(() => import('./pages/Register'));
 
 // Loading spinner component
 const LoadingSpinner = () => (
@@ -29,7 +31,7 @@ const PrivateRoute = ({ children }) => {
   }
   
   if (!user) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/login" replace />;
   }
   
   return children;
@@ -42,6 +44,8 @@ const App = () => {
         <Routes>
           {/* Public routes */}
           <Route path="/" element={<LandingPage />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
           
           {/* Protected routes */}
           <Route path="/app" element={

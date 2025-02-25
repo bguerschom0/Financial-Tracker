@@ -36,25 +36,25 @@ useEffect(() => {
       // Get first 6 characters from first name (or as many as available)
       const firstPart = firstName.substring(0, Math.min(6, firstName.length));
       
-      // Get first 2 characters from last name (or as many as available)
-      const lastPart = lastName.substring(0, Math.min(2, lastName.length));
+      // Get first 1 characters from last name (or as many as available)
+      const lastPart = lastName.substring(0, Math.min(1, lastName.length));
       
       // Combine the parts
       username = firstPart + lastPart;
     } else {
-      // Single name: Use up to 8 characters from it
-      username = nameParts[0].substring(0, Math.min(8, nameParts[0].length));
+      // Single name: Use up to 7 characters from it
+      username = nameParts[0].substring(0, Math.min(7, nameParts[0].length));
     }
     
     // Remove special characters and spaces
     username = username.toLowerCase().replace(/[^a-z0-9]/gi, '');
     
-    // Ensure username is exactly 8 characters
-    if (username.length < 8) {
+    // Ensure username is exactly 7 characters
+    if (username.length < 7) {
       // Pad with random numbers if needed
       const padding = Math.random().toString().substring(2, 10);
-      username = username + padding.substring(0, 8 - username.length);
-    } else if (username.length > 8) {
+      username = username + padding.substring(0, 7 - username.length);
+    } else if (username.length > 7) {
       // Truncate if longer than 8
       username = username.substring(0, 8);
     }
@@ -71,7 +71,7 @@ useEffect(() => {
     }
     
     if (!formData.username.trim() || formData.username.length !== 8) {
-      newErrors.username = 'Username must be 8 characters';
+      newErrors.username = 'Username must be 7 characters';
     }
     
     if (!formData.password) {

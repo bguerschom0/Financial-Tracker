@@ -118,9 +118,7 @@ useEffect(() => {
       await signUp({
         username: formData.username,
         password: formData.password,
-        metadata: {
-          full_name: formData.fullName
-        }
+        full_name: formData.fullName
       });
       
       addNotification('Account created successfully!', 'success');

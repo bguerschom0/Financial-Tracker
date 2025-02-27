@@ -1,5 +1,5 @@
 // src/pages/income/index.jsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Plus } from 'lucide-react';
 import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
@@ -10,11 +10,14 @@ import EmptyState from '../../components/ui/EmptyState';
 import { useTransactions } from '../../hooks/useTransactions';
 import { formatCurrency, formatDate } from '../../utils/formatting';
 import TransactionForm from '../../components/forms/TransactionForm';
+import { useAuth } from '../../hooks/useAuth';
 
 const IncomePage = () => {
   const [showAddModal, setShowAddModal] = useState(false);
   const [selectedTransaction, setSelectedTransaction] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { user } = useAuth();
+  const [userCurrency, setUserCurrency] = useState('USD');
   
   // Use the hook with the specific type filter
   const { 
@@ -27,6 +30,13 @@ const IncomePage = () => {
     refreshTransactions
   } = useTransactions({ type: 'income' });
 
+  // Get user's preferred currency
+  useEffect(() => {
+    if (user && user.currency) {
+      setUserCurrency(user.currency);
+    }
+  }, [user]);
+
   const handleSubmit = async (data) => {
     try {
       setIsSubmitting(true);
@@ -35,7 +45,8 @@ const IncomePage = () => {
       const formattedData = {
         ...data,
         amount: parseFloat(data.amount),
-        date: data.date || new Date().toISOString().split('T')[0]
+        date: data.date || new Date().toISOString().split('T')[0],
+        currency: data.currency || userCurrency // Include currency in transaction data
       };
       
       if (selectedTransaction) {
@@ -87,7 +98,11 @@ const IncomePage = () => {
         const date = new Date(t.date);
         return date.getMonth() === currentMonth && date.getFullYear() === currentYear;
       })
-      .reduce((sum, t) => sum + (parseFloat(t.amount) || 0), 0);
+      .reduce((sum, t) => {
+        // If transaction has its own currency, we should ideally convert currencies
+        // For simplicity, we're just summing as-is for now
+        return sum + (parseFloat(t.amount) || 0);
+      }, 0);
   };
 
   const totalIncome = transactions.length > 0 ? calculateMonthlyTotal() : 0;
@@ -133,9 +148,9 @@ const IncomePage = () => {
         <div className="space-y-1">
           <h3 className="text-lg font-medium text-gray-700">Total Income</h3>
           <p className="text-3xl font-bold text-green-600">
-            {formatCurrency(totalIncome)}
+            {formatCurrency(totalIncome, userCurrency)}
           </p>
-          <p className="text-sm text-gray-500">Current Month</p>
+          <p className="text-sm text-gray-500">Current Month ({userCurrency})</p>
         </div>
       </Card>
 
@@ -187,7 +202,10 @@ const IncomePage = () => {
                       {transaction.category}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-green-600">
-                      {formatCurrency(parseFloat(transaction.amount) || 0)}
+                      {formatCurrency(
+                        parseFloat(transaction.amount) || 0, 
+                        transaction.currency || userCurrency
+                      )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <button
@@ -235,6 +253,7 @@ const IncomePage = () => {
             }
           }}
           isSubmitting={isSubmitting}
+          defaultCurrency={userCurrency}
         />
       </Modal>
     </div>

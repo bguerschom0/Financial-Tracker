@@ -12,6 +12,7 @@ const ExpensesPage = React.lazy(() => import('./pages/expenses'));
 const DebtsPage = React.lazy(() => import('./pages/debts'));
 const SavingsPage = React.lazy(() => import('./pages/savings'));
 const SettingsPage = React.lazy(() => import('./pages/settings'));
+const ProfilePage = React.lazy(() => import('./pages/profile'));
 const LandingPage = React.lazy(() => import('./pages/LandingPage'));
 const NotFound = React.lazy(() => import('./pages/NotFound'));
 const Login = React.lazy(() => import('./pages/Login'));
@@ -61,6 +62,7 @@ const App = () => {
                 <Route path="expenses" element={<ExpensesPage />} />
                 <Route path="debts" element={<DebtsPage />} />
                 <Route path="savings" element={<SavingsPage />} />
+                <Route path="profile" element={<ProfilePage />} />
                 <Route path="settings" element={<SettingsPage />} />
               </Route>
               

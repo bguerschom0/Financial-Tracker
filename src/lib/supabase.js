@@ -19,13 +19,5 @@ export const TABLES = {
   LOGS: 'Flogs'
 };
 
-// Create the Supabase client with schema override
-export const supabase = createClient(
-  supabaseUrl, 
-  supabaseAnonKey,
-  {
-    db: {
-      schema: '' // Empty string to access tables directly without schema prefix
-    }
-  }
-);
+// Create the Supabase client with default schema
+export const supabase = createClient(supabaseUrl, supabaseAnonKey);

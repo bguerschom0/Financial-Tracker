@@ -92,7 +92,7 @@ async signUp({ username, password, full_name }) {
     console.error('Error details:', JSON.stringify(error, null, 2));
     throw error;
   }
-}
+},
   
   // Sign in existing user
   async signIn({ username, password }) {

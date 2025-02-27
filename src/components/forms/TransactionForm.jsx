@@ -7,14 +7,16 @@ const TransactionForm = ({
   initialData = null, 
   onSubmit, 
   onCancel,
-  isSubmitting = false
+  isSubmitting = false,
+  defaultCurrency = 'USD'
 }) => {
   const defaultData = {
     description: '',
     amount: '',
     category: '',
     date: new Date().toISOString().split('T')[0], // Today's date in YYYY-MM-DD format
-    notes: ''
+    notes: '',
+    currency: defaultCurrency
   };
 
   const [formData, setFormData] = useState(initialData || defaultData);
@@ -26,12 +28,17 @@ const TransactionForm = ({
       setFormData({
         ...initialData,
         // Ensure date is in the correct format
-        date: initialData.date ? new Date(initialData.date).toISOString().split('T')[0] : defaultData.date
+        date: initialData.date ? new Date(initialData.date).toISOString().split('T')[0] : defaultData.date,
+        // Ensure currency is set
+        currency: initialData.currency || defaultCurrency
       });
     } else {
-      setFormData(defaultData);
+      setFormData({
+        ...defaultData,
+        currency: defaultCurrency
+      });
     }
-  }, [initialData]);
+  }, [initialData, defaultCurrency]);
 
   const validateForm = () => {
     const newErrors = {};
@@ -52,6 +59,10 @@ const TransactionForm = ({
     
     if (!formData.date) {
       newErrors.date = 'Date is required';
+    }
+    
+    if (!formData.currency) {
+      newErrors.currency = 'Currency is required';
     }
     
     setErrors(newErrors);
@@ -113,6 +124,23 @@ const TransactionForm = ({
     }
   };
 
+  // Available currencies
+  const currencies = [
+    { code: 'USD', name: 'US Dollar' },
+    { code: 'EUR', name: 'Euro' },
+    { code: 'GBP', name: 'British Pound' },
+    { code: 'JPY', name: 'Japanese Yen' },
+    { code: 'CNY', name: 'Chinese Yuan' },
+    { code: 'INR', name: 'Indian Rupee' },
+    { code: 'RWF', name: 'Rwandan Franc' },
+    { code: 'NGN', name: 'Nigerian Naira' },
+    { code: 'KES', name: 'Kenyan Shilling' },
+    { code: 'ZAR', name: 'South African Rand' },
+    { code: 'GHS', name: 'Ghanaian Cedi' },
+    { code: 'BTC', name: 'Bitcoin' },
+    { code: 'ETH', name: 'Ethereum' }
+  ];
+
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       {/* Description */}
@@ -139,30 +167,58 @@ const TransactionForm = ({
         </div>
       </div>
 
-      {/* Amount */}
-      <div>
-        <label htmlFor="amount" className="block text-sm font-medium text-gray-700">
-          Amount
-        </label>
-        <div className="mt-1 relative rounded-md shadow-sm">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <span className="text-gray-500 sm:text-sm">$</span>
+      {/* Amount and Currency Row */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Amount */}
+        <div>
+          <label htmlFor="amount" className="block text-sm font-medium text-gray-700">
+            Amount
+          </label>
+          <div className="mt-1 relative rounded-md shadow-sm">
+            <input
+              type="text"
+              name="amount"
+              id="amount"
+              value={formData.amount}
+              onChange={handleChange}
+              className={`focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-gray-300 rounded-md ${
+                errors.amount ? 'border-red-300' : ''
+              }`}
+              placeholder="0.00"
+              disabled={isSubmitting}
+            />
+            {errors.amount && (
+              <p className="mt-1 text-sm text-red-600">{errors.amount}</p>
+            )}
           </div>
-          <input
-            type="text"
-            name="amount"
-            id="amount"
-            value={formData.amount}
-            onChange={handleChange}
-            className={`focus:ring-primary-500 focus:border-primary-500 block w-full pl-7 pr-12 sm:text-sm border-gray-300 rounded-md ${
-              errors.amount ? 'border-red-300' : ''
-            }`}
-            placeholder="0.00"
-            disabled={isSubmitting}
-          />
-          {errors.amount && (
-            <p className="mt-1 text-sm text-red-600">{errors.amount}</p>
-          )}
+        </div>
+
+        {/* Currency */}
+        <div>
+          <label htmlFor="currency" className="block text-sm font-medium text-gray-700">
+            Currency
+          </label>
+          <div className="mt-1">
+            <select
+              id="currency"
+              name="currency"
+              value={formData.currency}
+              onChange={handleChange}
+              className={`shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-gray-300 rounded-md ${
+                errors.currency ? 'border-red-300' : ''
+              }`}
+              disabled={isSubmitting}
+            >
+              {currencies.map(currency => (
+                <option key={currency.code} value={currency.code}>
+                  {currency.code} - {currency.name}
+                </option>
+              ))}
+            </select>
+            {errors.currency && (
+              <p className="mt-1 text-sm text-red-600">{errors.currency}</p>
+            )}
+          </div>
         </div>
       </div>
 

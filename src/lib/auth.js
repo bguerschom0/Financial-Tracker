@@ -1,5 +1,6 @@
 // src/lib/auth.js
 import { supabase, TABLES } from './supabase';
+import bcrypt from 'bcryptjs'; // You'll need to install this package: npm install bcryptjs
 
 export const auth = {
   // Sign up new user
@@ -16,12 +17,16 @@ export const auth = {
         throw new Error('Username already exists');
       }
       
+      // Hash password with bcrypt
+      const salt = await bcrypt.genSalt(10);
+      const hashedPassword = await bcrypt.hash(password, salt);
+      
       // Insert new user into Fusers table
       const { data, error } = await supabase
         .from(TABLES.USERS)
         .insert([{
           username,
-          password_hash: password, // In production, you should hash this password
+          password_hash: hashedPassword, // Store the hashed password
           full_name,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
@@ -63,15 +68,22 @@ export const auth = {
   // Sign in existing user
   async signIn({ username, password }) {
     try {
-      const { data, error } = await supabase
+      // Get user record
+      const { data: user, error } = await supabase
         .from(TABLES.USERS)
         .select('*')
         .eq('username', username)
-        .eq('password_hash', password) // In production, verify hash properly
         .single();
       
       if (error) throw error;
-      if (!data) throw new Error('Invalid username or password');
+      if (!user) throw new Error('Invalid username or password');
+      
+      // Verify password with bcrypt
+      const isValidPassword = await bcrypt.compare(password, user.password_hash);
+      
+      if (!isValidPassword) {
+        throw new Error('Invalid username or password');
+      }
       
       // Create session
       const sessionToken = Math.random().toString(36).substring(2, 15) + 
@@ -83,7 +95,7 @@ export const auth = {
       await supabase
         .from(TABLES.SESSIONS)
         .insert([{
-          user_id: data.id,
+          user_id: user.id,
           token: sessionToken,
           expires_at: expiresAt.toISOString(),
           ip_address: '127.0.0.1', // In production, get real IP
@@ -94,13 +106,13 @@ export const auth = {
       await supabase
         .from(TABLES.USERS)
         .update({ last_login: new Date().toISOString() })
-        .eq('id', data.id);
+        .eq('id', user.id);
       
       // Save session in localStorage
       localStorage.setItem('session_token', sessionToken);
-      localStorage.setItem('user', JSON.stringify(data));
+      localStorage.setItem('user', JSON.stringify(user));
       
-      return { user: data, session: { token: sessionToken } };
+      return { user, session: { token: sessionToken } };
     } catch (error) {
       console.error('Error signing in:', error.message);
       throw error;

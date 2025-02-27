@@ -1,8 +1,8 @@
-// src/hooks/useAuth.js
+// src/hooks/useAuth.jsx
 import React, { useState, useEffect, useContext, createContext } from 'react';
 import { auth } from '../lib/auth';
 
-const AuthContext = createContext();
+const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
@@ -119,24 +119,28 @@ export function AuthProvider({ children }) {
     }
   };
 
-  // Using React.createElement instead of JSX
-  return React.createElement(
-    AuthContext.Provider,
-    {
-      value: {
-        user,
-        loading,
-        error,
-        signUp,
-        signIn,
-        signOut,
-        updateUser
-      }
-    },
-    children
+  // Create the context value object
+  const value = {
+    user,
+    loading,
+    error,
+    signUp,
+    signIn,
+    signOut,
+    updateUser
+  };
+
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+    </AuthContext.Provider>
   );
 }
 
 export function useAuth() {
-  return useContext(AuthContext);
+  const context = useContext(AuthContext);
+  if (context === null) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
 }

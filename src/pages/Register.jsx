@@ -104,32 +104,47 @@ const Register = () => {
     }
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  
+  if (!validateForm()) {
+    return;
+  }
+  
+  try {
+    setIsLoading(true);
     
-    if (!validateForm()) {
-      return;
+    console.log("Submitting registration for:", formData.username);
+    
+    // Save to Fusers table in database
+    const result = await signUp({
+      username: formData.username,
+      password: formData.password,
+      full_name: formData.fullName
+    });
+    
+    console.log("Registration successful:", result);
+    addNotification('Account created successfully!', 'success');
+    navigate('/login');
+  } catch (error) {
+    console.error('Registration error:', error);
+    // Check if error is an object with a message property
+    let errorMessage = 'Failed to create account';
+    if (error && typeof error === 'object') {
+      if (error.message) {
+        errorMessage = error.message;
+      } else {
+        console.error('Detailed error:', JSON.stringify(error, null, 2));
+      }
+    } else if (typeof error === 'string') {
+      errorMessage = error;
     }
     
-    try {
-      setIsLoading(true);
-      
-      // Save to Fusers table in database
-      await signUp({
-        username: formData.username,
-        password: formData.password,
-        full_name: formData.fullName
-      });
-      
-      addNotification('Account created successfully!', 'success');
-      navigate('/login');
-    } catch (error) {
-      console.error('Registration error:', error);
-      addNotification(error.message || 'Failed to create account', 'error');
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    addNotification(errorMessage, 'error');
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   const handleTermsClick = (e) => {
     e.preventDefault();

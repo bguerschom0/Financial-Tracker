@@ -3,8 +3,8 @@ import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { 
   Home, DollarSign, CreditCard, 
-  Wallet, PiggyBank, Settings, X,
-  BarChart, FileText, User
+  Wallet, PiggyBank, X,
+  BarChart
 } from 'lucide-react';
 
 const navigation = [
@@ -13,9 +13,7 @@ const navigation = [
   { name: 'Expenses', href: '/app/expenses', icon: CreditCard },
   { name: 'Debts', href: '/app/debts', icon: Wallet },
   { name: 'Savings', href: '/app/savings', icon: PiggyBank },
-  { name: 'Reports', href: '/app/reports', icon: BarChart },
-  { name: 'Profile', href: '/app/profile', icon: User },
-  { name: 'Settings', href: '/app/settings', icon: Settings }
+  { name: 'Reports', href: '/app/reports', icon: BarChart }
 ];
 
 const Sidebar = ({ isOpen, onClose }) => {

@@ -7,16 +7,16 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'your-temporar
 
 // Define table names with 'F' prefix (without schema)
 export const TABLES = {
-  USERS: 'Fusers',
-  TRANSACTIONS: 'Ftransactions',
-  BUDGETS: 'Fbudgets',
-  DEBTS: 'Fdebts',
-  SAVINGS: 'Fsavings',
-  SETTINGS: 'Fsettings',
-  CATEGORIES: 'Fcategories',
-  SESSIONS: 'Fsessions',
-  REPORTS: 'Freports',
-  LOGS: 'Flogs'
+  USERS: 'fusers',
+  TRANSACTIONS: 'ftransactions',
+  BUDGETS: 'fbudgets',
+  DEBTS: 'fdebts',
+  SAVINGS: 'fsavings',
+  SETTINGS: 'fsettings',
+  CATEGORIES: 'fcategories',
+  SESSIONS: 'fsessions',
+  REPORTS: 'freports',
+  LOGS: 'flogs'
 };
 
 // Create the Supabase client with default schema

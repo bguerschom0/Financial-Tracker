@@ -5,7 +5,7 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://example.supabase.co';
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'your-temporary-key';
 
-// Define table names with 'F' prefix
+// Define table names with 'F' prefix (without schema)
 export const TABLES = {
   USERS: 'Fusers',
   TRANSACTIONS: 'Ftransactions',
@@ -19,4 +19,13 @@ export const TABLES = {
   LOGS: 'Flogs'
 };
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+// Create the Supabase client with schema override
+export const supabase = createClient(
+  supabaseUrl, 
+  supabaseAnonKey,
+  {
+    db: {
+      schema: '' // Empty string to access tables directly without schema prefix
+    }
+  }
+);

@@ -1,12 +1,15 @@
-// src/pages/reports/index.jsx
+// src/pages/reports/index.jsx - Updated Income Distribution Chart
 import React, { useState, useEffect } from 'react';
 import Card from '../../components/ui/Card';
 import Select from '../../components/ui/Select';
 import Button from '../../components/ui/Button';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import Alert from '../../components/ui/Alert';
-import { Download, PieChart, BarChart as BarChartIcon, LineChart as LineChartIcon } from 'lucide-react';
-import { LineChart, Line, BarChart, Bar, PieChart as RechartPie, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { Download, PieChart as PieChartIcon, BarChart as BarChartIcon, LineChart as LineChartIcon } from 'lucide-react';
+import { 
+  LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, Sector,
+  XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer 
+} from 'recharts';
 import { formatCurrency } from '../../utils/formatting';
 import { useTransactions } from '../../hooks/useTransactions';
 import { useAuth } from '../../hooks/useAuth';
@@ -23,6 +26,7 @@ const ReportsPage = () => {
   const [exporting, setExporting] = useState(false);
   const [error, setError] = useState(null);
   
+  // Chart state
   const [incomeData, setIncomeData] = useState([]);
   const [expenseData, setExpenseData] = useState([]);
   const [trendData, setTrendData] = useState([]);
@@ -32,6 +36,7 @@ const ReportsPage = () => {
     netSavings: 0,
     savingsRate: 0
   });
+  const [activeIncomeIndex, setActiveIncomeIndex] = useState(0);
 
   // Get all transactions, we'll filter them based on date range
   const { 
@@ -206,6 +211,59 @@ const ReportsPage = () => {
     });
   }
 
+  // Custom active shape for pie chart
+  const renderActiveShape = (props) => {
+    const RADIAN = Math.PI / 180;
+    const { 
+      cx, cy, midAngle, innerRadius, outerRadius, startAngle, endAngle,
+      fill, payload, percent, value 
+    } = props;
+    
+    const sin = Math.sin(-RADIAN * midAngle);
+    const cos = Math.cos(-RADIAN * midAngle);
+    const sx = cx + (outerRadius + 10) * cos;
+    const sy = cy + (outerRadius + 10) * sin;
+    const mx = cx + (outerRadius + 30) * cos;
+    const my = cy + (outerRadius + 30) * sin;
+    const ex = mx + (cos >= 0 ? 1 : -1) * 22;
+    const ey = my;
+    const textAnchor = cos >= 0 ? 'start' : 'end';
+
+    return (
+      <g>
+        <text x={cx} y={cy} dy={8} textAnchor="middle" fill={fill} className="text-xl font-medium">
+          {payload.name}
+        </text>
+        <Sector
+          cx={cx}
+          cy={cy}
+          innerRadius={innerRadius}
+          outerRadius={outerRadius}
+          startAngle={startAngle}
+          endAngle={endAngle}
+          fill={fill}
+        />
+        <Sector
+          cx={cx}
+          cy={cy}
+          startAngle={startAngle}
+          endAngle={endAngle}
+          innerRadius={outerRadius + 6}
+          outerRadius={outerRadius + 10}
+          fill={fill}
+        />
+        <path d={`M${sx},${sy}L${mx},${my}L${ex},${ey}`} stroke={fill} fill="none" />
+        <circle cx={ex} cy={ey} r={2} fill={fill} stroke="none" />
+        <text x={ex + (cos >= 0 ? 1 : -1) * 12} y={ey} textAnchor={textAnchor} fill="#333">
+          {formatCurrency(value, userCurrency)}
+        </text>
+        <text x={ex + (cos >= 0 ? 1 : -1) * 12} y={ey} dy={18} textAnchor={textAnchor} fill="#999">
+          {`(${(percent * 100).toFixed(2)}%)`}
+        </text>
+      </g>
+    );
+  };
+
   // Export report data to CSV
   const handleExportReport = async () => {
     try {
@@ -349,25 +407,27 @@ const ReportsPage = () => {
         <>
           {/* Reports Content */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Income Distribution */}
+            {/* Income Distribution - UPDATED WITH INTERACTIVE CHART */}
             <Card title="Income Distribution">
               {incomeData.length === 0 ? (
                 <div className="h-[300px] flex items-center justify-center">
                   <p className="text-gray-500">No income data for the selected period</p>
                 </div>
               ) : (
-                <div className="h-[300px]">
+                <div className="h-[350px]">
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                       <Pie
+                        activeIndex={activeIncomeIndex}
+                        activeShape={renderActiveShape}
                         data={incomeData}
-                        dataKey="value"
-                        nameKey="name"
                         cx="50%"
                         cy="50%"
-                        outerRadius={100}
-                        fill="#10B981"
-                        label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                        innerRadius={60}
+                        outerRadius={80}
+                        fill="#8884d8"
+                        dataKey="value"
+                        onMouseEnter={(_, index) => setActiveIncomeIndex(index)}
                       >
                         {incomeData.map((entry, index) => (
                           <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
@@ -377,7 +437,6 @@ const ReportsPage = () => {
                         formatter={(value) => formatCurrency(value, userCurrency)} 
                         separator=": "
                       />
-                      <Legend />
                     </PieChart>
                   </ResponsiveContainer>
                 </div>
@@ -391,7 +450,7 @@ const ReportsPage = () => {
                   <p className="text-gray-500">No expense data for the selected period</p>
                 </div>
               ) : (
-                <div className="h-[300px]">
+                <div className="h-[350px]">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={expenseData}>
                       <CartesianGrid strokeDasharray="3 3" />
@@ -417,7 +476,7 @@ const ReportsPage = () => {
                   <p className="text-gray-500">No trend data for the selected period</p>
                 </div>
               ) : (
-                <div className="h-[300px]">
+                <div className="h-[350px]">
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={trendData}>
                       <CartesianGrid strokeDasharray="3 3" />
@@ -425,9 +484,9 @@ const ReportsPage = () => {
                       <YAxis />
                       <Tooltip formatter={(value) => formatCurrency(value, userCurrency)} />
                       <Legend />
-                      <Line type="monotone" dataKey="income" stroke="#10B981" name="Income" />
-                      <Line type="monotone" dataKey="expenses" stroke="#EF4444" name="Expenses" />
-                      <Line type="monotone" dataKey="savings" stroke="#3B82F6" name="Savings" />
+                      <Line type="monotone" dataKey="income" stroke="#10B981" strokeWidth={2} activeDot={{ r: 8 }} name="Income" />
+                      <Line type="monotone" dataKey="expenses" stroke="#EF4444" strokeWidth={2} activeDot={{ r: 8 }} name="Expenses" />
+                      <Line type="monotone" dataKey="savings" stroke="#3B82F6" strokeWidth={2} activeDot={{ r: 8 }} name="Savings" />
                     </LineChart>
                   </ResponsiveContainer>
                 </div>
@@ -438,25 +497,25 @@ const ReportsPage = () => {
           {/* Summary Statistics */}
           <Card title="Summary Statistics">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="p-4 bg-gray-50 rounded-lg">
+              <div className="p-4 bg-gray-50 rounded-lg shadow-sm hover:shadow-md transition-shadow">
                 <h4 className="text-sm font-medium text-gray-500">Total Income</h4>
                 <p className="mt-1 text-2xl font-semibold text-green-600">
                   {formatCurrency(summaryStats.totalIncome, userCurrency)}
                 </p>
               </div>
-              <div className="p-4 bg-gray-50 rounded-lg">
+              <div className="p-4 bg-gray-50 rounded-lg shadow-sm hover:shadow-md transition-shadow">
                 <h4 className="text-sm font-medium text-gray-500">Total Expenses</h4>
                 <p className="mt-1 text-2xl font-semibold text-red-600">
                   {formatCurrency(summaryStats.totalExpenses, userCurrency)}
                 </p>
               </div>
-              <div className="p-4 bg-gray-50 rounded-lg">
+              <div className="p-4 bg-gray-50 rounded-lg shadow-sm hover:shadow-md transition-shadow">
                 <h4 className="text-sm font-medium text-gray-500">Net Savings</h4>
                 <p className="mt-1 text-2xl font-semibold text-blue-600">
                   {formatCurrency(summaryStats.netSavings, userCurrency)}
                 </p>
               </div>
-              <div className="p-4 bg-gray-50 rounded-lg">
+              <div className="p-4 bg-gray-50 rounded-lg shadow-sm hover:shadow-md transition-shadow">
                 <h4 className="text-sm font-medium text-gray-500">Savings Rate</h4>
                 <p className="mt-1 text-2xl font-semibold text-purple-600">
                   {summaryStats.savingsRate}%

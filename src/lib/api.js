@@ -1,5 +1,43 @@
-// src/lib/api.js
+// src/lib/api.js - Enhanced with caching to prevent redundant API calls
 import { supabase, TABLES } from './supabase';
+
+// Simple in-memory cache system
+const cache = {
+  data: {}, // Cache storage
+  timestamp: {}, // When data was cached
+  ttl: 60000, // Cache lifetime in ms (1 minute)
+  
+  // Get cache data with key
+  get(key) {
+    const now = Date.now();
+    const timestamp = this.timestamp[key] || 0;
+    
+    // Check if cache is still valid
+    if (timestamp && now - timestamp < this.ttl) {
+      return this.data[key];
+    }
+    
+    return null; // Cache miss or expired
+  },
+  
+  // Set cache data with key
+  set(key, data) {
+    this.data[key] = data;
+    this.timestamp[key] = Date.now();
+  },
+  
+  // Invalidate cache for a key
+  invalidate(key) {
+    delete this.data[key];
+    delete this.timestamp[key];
+  },
+  
+  // Invalidate all cache
+  invalidateAll() {
+    this.data = {};
+    this.timestamp = {};
+  }
+};
 
 export const api = {
   // Transactions
@@ -24,6 +62,10 @@ export const api = {
       .single();
       
     if (error) throw error;
+    
+    // Invalidate transaction cache since we added a new transaction
+    cache.invalidate('transactions');
+    
     return transaction;
   },
   
@@ -34,6 +76,16 @@ export const api = {
       throw new Error('User not authenticated');
     }
     
+    // Create a cache key based on filters
+    const cacheKey = `transactions:${user.id}:${JSON.stringify(filters)}`;
+    
+    // Check cache first
+    const cachedData = cache.get(cacheKey);
+    if (cachedData) {
+      return cachedData;
+    }
+    
+    // If not in cache, fetch from API
     let query = supabase
       .from(TABLES.TRANSACTIONS)
       .select('*')
@@ -55,6 +107,10 @@ export const api = {
     
     const { data, error } = await query.order('date', { ascending: false });
     if (error) throw error;
+    
+    // Cache the results
+    cache.set(cacheKey, data);
+    
     return data;
   },
   
@@ -77,6 +133,10 @@ export const api = {
       .single();
       
     if (error) throw error;
+    
+    // Invalidate transaction cache since we updated a transaction
+    cache.invalidateAll();
+    
     return transaction;
   },
   
@@ -94,86 +154,71 @@ export const api = {
       .eq('user_id', user.id); // Security check
       
     if (error) throw error;
+    
+    // Invalidate transaction cache since we deleted a transaction
+    cache.invalidateAll();
   },
   
-  // Budgets
-  async createBudget(data) {
+  // Debts
+  async getDebts() {
     const user = JSON.parse(localStorage.getItem('user') || '{}');
     
     if (!user.id) {
       throw new Error('User not authenticated');
     }
     
-    const budgetData = {
-      ...data,
-      user_id: user.id,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    };
+    // Create a cache key for debts
+    const cacheKey = `debts:${user.id}`;
     
-    const { data: budget, error } = await supabase
-      .from(TABLES.BUDGETS)
-      .insert([budgetData])
-      .select()
-      .single();
-      
-    if (error) throw error;
-    return budget;
-  },
-  
-  async getBudgets(period = 'monthly') {
-    const user = JSON.parse(localStorage.getItem('user') || '{}');
-    
-    if (!user.id) {
-      throw new Error('User not authenticated');
+    // Check cache first
+    const cachedData = cache.get(cacheKey);
+    if (cachedData) {
+      return cachedData;
     }
     
     const { data, error } = await supabase
-      .from(TABLES.BUDGETS)
+      .from(TABLES.DEBTS)
       .select('*')
       .eq('user_id', user.id)
-      .eq('period', period);
+      .order('created_at', { ascending: false });
       
     if (error) throw error;
-    return data;
+    
+    // Cache the results
+    cache.set(cacheKey, data || []);
+    
+    return data || [];
   },
   
-  async updateBudget(id, data) {
+  // Savings
+  async getSavings() {
     const user = JSON.parse(localStorage.getItem('user') || '{}');
     
     if (!user.id) {
       throw new Error('User not authenticated');
     }
     
-    const { data: budget, error } = await supabase
-      .from(TABLES.BUDGETS)
-      .update({
-        ...data,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', id)
-      .eq('user_id', user.id) // Security check
-      .select()
-      .single();
-      
-    if (error) throw error;
-    return budget;
-  },
-  
-  async deleteBudget(id) {
-    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    // Create a cache key for savings
+    const cacheKey = `savings:${user.id}`;
     
-    if (!user.id) {
-      throw new Error('User not authenticated');
+    // Check cache first
+    const cachedData = cache.get(cacheKey);
+    if (cachedData) {
+      return cachedData;
     }
     
-    const { error } = await supabase
-      .from(TABLES.BUDGETS)
-      .delete()
-      .eq('id', id)
-      .eq('user_id', user.id); // Security check
+    const { data, error } = await supabase
+      .from(TABLES.SAVINGS)
+      .select('*')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false });
       
     if (error) throw error;
+    
+    // Cache the results
+    cache.set(cacheKey, data || []);
+    
+    return data || [];
   },
   
   // User Profile
@@ -199,6 +244,9 @@ export const api = {
     // Update local storage
     localStorage.setItem('user', JSON.stringify(updatedUser));
     
+    // Invalidate user profile cache
+    cache.invalidate('profile');
+    
     return updatedUser;
   },
   
@@ -207,6 +255,15 @@ export const api = {
     
     if (!user.id) {
       throw new Error('User not authenticated');
+    }
+    
+    // Create a cache key for profile
+    const cacheKey = 'profile';
+    
+    // Check cache first
+    const cachedData = cache.get(cacheKey);
+    if (cachedData) {
+      return cachedData;
     }
     
     const { data, error } = await supabase
@@ -220,6 +277,9 @@ export const api = {
     // Update local storage with latest data
     localStorage.setItem('user', JSON.stringify(data));
     
+    // Cache the results
+    cache.set(cacheKey, data);
+    
     return data;
   },
   
@@ -229,6 +289,15 @@ export const api = {
     
     if (!user.id) {
       throw new Error('User not authenticated');
+    }
+    
+    // Create a cache key for settings
+    const cacheKey = `settings:${user.id}`;
+    
+    // Check cache first
+    const cachedData = cache.get(cacheKey);
+    if (cachedData) {
+      return cachedData;
     }
     
     const { data, error } = await supabase
@@ -261,8 +330,15 @@ export const api = {
         .single();
         
       if (insertError) throw insertError;
+      
+      // Cache the results
+      cache.set(cacheKey, newSettings);
+      
       return newSettings;
     }
+    
+    // Cache the results
+    cache.set(cacheKey, data);
     
     return data;
   },
@@ -285,6 +361,10 @@ export const api = {
       .single();
       
     if (error) throw error;
+    
+    // Invalidate settings cache
+    cache.invalidate(`settings:${user.id}`);
+    
     return data;
   }
 };

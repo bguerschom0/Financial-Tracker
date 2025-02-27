@@ -5,97 +5,111 @@ import Button from '../../components/ui/Button';
 import Alert from '../../components/ui/Alert';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import { useAuth } from '../../hooks/useAuth';
+import { useNotification } from '../../hooks/useNotification';
 import { api } from '../../lib/api';
-import CurrencySelector, { SUPPORTED_CURRENCIES } from '../../components/ui/CurrencySelector';
+import CurrencySelector from '../../components/ui/CurrencySelector';
+import UpdatePassword from '../../components/account/UpdatePassword';
+import { User, Mail, Calendar, Clock, MapPin } from 'lucide-react';
+import { formatDate } from '../../utils/formatting';
 
 const ProfilePage = () => {
   const { user, updateUser } = useAuth();
-  const [formData, setFormData] = useState({
+  const { addNotification } = useNotification();
+  
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState(null);
+  
+  const [userProfile, setUserProfile] = useState({
     full_name: '',
+    email: '',
     currency: 'USD',
     language: 'en',
     timezone: 'UTC'
   });
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
-  const [message, setMessage] = useState(null);
 
-  // Load user data
+  // Load user profile
   useEffect(() => {
-    const loadProfile = async () => {
+    const loadUserData = async () => {
       if (!user) {
-        setIsLoading(false);
+        setLoading(false);
         return;
       }
-
+      
       try {
-        setIsLoading(true);
+        setLoading(true);
+        setError(null);
+        
+        // Load user profile
         const profile = await api.getProfile();
-
-        setFormData({
+        
+        setUserProfile({
           full_name: profile.full_name || '',
+          email: profile.email || '',
           currency: profile.currency || 'USD',
           language: profile.language || 'en',
           timezone: profile.timezone || 'UTC'
         });
-      } catch (error) {
-        console.error('Error loading profile:', error);
-        setMessage({
-          type: 'error',
-          text: 'Failed to load profile. Please try again.'
-        });
+        
+      } catch (err) {
+        console.error('Error loading user profile:', err);
+        setError('Failed to load profile. Please try again.');
       } finally {
-        setIsLoading(false);
+        setLoading(false);
       }
     };
-
-    loadProfile();
+    
+    loadUserData();
   }, [user]);
 
+  // Handle profile update
+  const handleProfileUpdate = async (e) => {
+    e.preventDefault();
+    
+    try {
+      setSaving(true);
+      
+      // Update profile in database
+      const updatedProfile = await api.updateProfile({
+        full_name: userProfile.full_name,
+        email: userProfile.email,
+        currency: userProfile.currency,
+        language: userProfile.language,
+        timezone: userProfile.timezone
+      });
+      
+      // Update user in context
+      if (updateUser) {
+        updateUser(updatedProfile);
+      }
+      
+      addNotification('Profile updated successfully', 'success');
+    } catch (err) {
+      console.error('Error updating profile:', err);
+      addNotification('Failed to update profile', 'error');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Handle input changes
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setUserProfile(prev => ({
       ...prev,
       [name]: value
     }));
   };
 
+  // Handle currency change
   const handleCurrencyChange = (currency) => {
-    setFormData(prev => ({
+    setUserProfile(prev => ({
       ...prev,
       currency
     }));
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
-    try {
-      setIsSaving(true);
-      setMessage(null);
-
-      const updatedProfile = await api.updateProfile(formData);
-      
-      if (updateUser) {
-        updateUser(updatedProfile);
-      }
-
-      setMessage({
-        type: 'success',
-        text: 'Profile updated successfully!'
-      });
-    } catch (error) {
-      console.error('Error updating profile:', error);
-      setMessage({
-        type: 'error',
-        text: 'Failed to update profile. Please try again.'
-      });
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  if (isLoading) {
+  if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
         <LoadingSpinner size="lg" />
@@ -103,71 +117,110 @@ const ProfilePage = () => {
     );
   }
 
+  if (error) {
+    return (
+      <Alert type="error" className="mt-4">
+        {error}
+      </Alert>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Profile Settings</h1>
+        <h1 className="text-2xl font-bold text-gray-900">My Profile</h1>
         <p className="mt-1 text-sm text-gray-500">
-          Update your account information and preferences
+          Manage your account information and preferences
         </p>
       </div>
 
-      {message && (
-        <Alert type={message.type} dismissible onDismiss={() => setMessage(null)}>
-          {message.text}
-        </Alert>
-      )}
-
+      {/* User Profile Overview */}
       <Card>
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Full Name */}
-          <div>
-            <label htmlFor="full_name" className="block text-sm font-medium text-gray-700">
-              Full Name
-            </label>
-            <div className="mt-1">
+        <div className="flex flex-col md:flex-row">
+          <div className="flex-shrink-0 mb-4 md:mb-0 md:mr-6">
+            <div className="h-32 w-32 rounded-full bg-primary-100 flex items-center justify-center">
+              <User className="h-16 w-16 text-primary-600" />
+            </div>
+          </div>
+          
+          <div className="flex-grow">
+            <h2 className="text-xl font-bold text-gray-900">{userProfile.full_name}</h2>
+            <p className="text-sm text-gray-500">{userProfile.email || 'No email set'}</p>
+            
+            <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="flex items-center text-sm text-gray-500">
+                <Calendar className="h-4 w-4 mr-2 text-gray-400" />
+                <span>Member since: {user ? formatDate(user.created_at) : 'Unknown'}</span>
+              </div>
+              <div className="flex items-center text-sm text-gray-500">
+                <Clock className="h-4 w-4 mr-2 text-gray-400" />
+                <span>Last login: {user && user.last_login ? formatDate(user.last_login) : 'Never'}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </Card>
+
+      {/* Profile Settings */}
+      <Card title="Profile Settings">
+        <form onSubmit={handleProfileUpdate} className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Full Name */}
+            <div>
+              <label htmlFor="full_name" className="block text-sm font-medium text-gray-700 mb-1">
+                Full Name
+              </label>
               <input
                 type="text"
                 id="full_name"
                 name="full_name"
-                value={formData.full_name}
+                value={userProfile.full_name}
                 onChange={handleChange}
                 className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-gray-300 rounded-md"
-                disabled={isSaving}
+                disabled={saving}
               />
             </div>
-          </div>
+            
+            {/* Email */}
+            <div>
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+                Email Address
+              </label>
+              <input
+                type="email"
+                id="email"
+                name="email"
+                value={userProfile.email}
+                onChange={handleChange}
+                className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                disabled={saving}
+              />
+            </div>
 
-          {/* Currency */}
-          <div>
-            <label htmlFor="currency" className="block text-sm font-medium text-gray-700">
-              Default Currency
-            </label>
-            <div className="mt-1">
+            {/* Currency */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Default Currency
+              </label>
               <CurrencySelector
-                value={formData.currency}
+                value={userProfile.currency}
                 onChange={handleCurrencyChange}
-                disabled={isSaving}
+                disabled={saving}
               />
-              <p className="mt-1 text-xs text-gray-500">
-                This will be used as the default currency for all your transactions.
-              </p>
             </div>
-          </div>
 
-          {/* Language */}
-          <div>
-            <label htmlFor="language" className="block text-sm font-medium text-gray-700">
-              Language
-            </label>
-            <div className="mt-1">
+            {/* Language */}
+            <div>
+              <label htmlFor="language" className="block text-sm font-medium text-gray-700 mb-1">
+                Language
+              </label>
               <select
                 id="language"
                 name="language"
-                value={formData.language}
+                value={userProfile.language}
                 onChange={handleChange}
                 className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-gray-300 rounded-md"
-                disabled={isSaving}
+                disabled={saving}
               >
                 <option value="en">English</option>
                 <option value="fr">French</option>
@@ -177,21 +230,19 @@ const ProfilePage = () => {
                 <option value="rw">Kinyarwanda</option>
               </select>
             </div>
-          </div>
 
-          {/* Timezone */}
-          <div>
-            <label htmlFor="timezone" className="block text-sm font-medium text-gray-700">
-              Timezone
-            </label>
-            <div className="mt-1">
+            {/* Timezone */}
+            <div className="md:col-span-2">
+              <label htmlFor="timezone" className="block text-sm font-medium text-gray-700 mb-1">
+                Timezone
+              </label>
               <select
                 id="timezone"
                 name="timezone"
-                value={formData.timezone}
+                value={userProfile.timezone}
                 onChange={handleChange}
                 className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-gray-300 rounded-md"
-                disabled={isSaving}
+                disabled={saving}
               >
                 <option value="UTC">UTC (Coordinated Universal Time)</option>
                 <option value="America/New_York">Eastern Time (US & Canada)</option>
@@ -208,16 +259,38 @@ const ProfilePage = () => {
             </div>
           </div>
 
-          {/* Submit Button */}
           <div className="flex justify-end">
-            <Button
+            <Button 
               type="submit"
-              isLoading={isSaving}
+              isLoading={saving}
             >
               Save Changes
             </Button>
           </div>
         </form>
+      </Card>
+
+      {/* Password Update */}
+      <UpdatePassword />
+
+      {/* Account Deletion */}
+      <Card className="bg-red-50">
+        <div className="space-y-4">
+          <h3 className="text-lg font-semibold text-red-700">Delete Account</h3>
+          <p className="text-sm text-red-600">
+            Once you delete your account, there is no going back. Please be certain.
+          </p>
+          <Button
+            variant="danger"
+            onClick={() => {
+              if (window.confirm('Are you sure you want to delete your account? This action cannot be undone.')) {
+                alert('Account deletion would be implemented here');
+              }
+            }}
+          >
+            Delete Account
+          </Button>
+        </div>
       </Card>
     </div>
   );

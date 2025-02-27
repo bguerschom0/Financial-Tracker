@@ -1,22 +1,22 @@
 // src/components/layout/Header.jsx
 import React, { useState, useRef, useEffect } from 'react';
-import { Menu, Bell, User, Settings, LogOut, CreditCard, DollarSign } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
+import { Menu, Bell, User, LogOut, Settings } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { useNotification } from '../../hooks/useNotification';
 
 const Header = ({ toggleSidebar }) => {
   const { user, signOut } = useAuth();
   const { notifications, addNotification } = useNotification();
-  const [showProfileMenu, setShowProfileMenu] = useState(false);
-  const profileMenuRef = useRef(null);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const dropdownRef = useRef(null);
   const navigate = useNavigate();
 
-  // Close profile menu when clicking outside
+  // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (profileMenuRef.current && !profileMenuRef.current.contains(event.target)) {
-        setShowProfileMenu(false);
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setShowDropdown(false);
       }
     };
 
@@ -51,13 +51,14 @@ const Header = ({ toggleSidebar }) => {
               <Menu className="h-6 w-6" />
             </button>
           </div>
+          
           {/* Right */}
           <div className="flex items-center space-x-4">
             {/* Notifications */}
             <div className="relative">
               <button className="text-gray-500 hover:text-gray-600 focus:outline-none">
                 <Bell className="h-6 w-6" />
-                {notifications.length > 0 && (
+                {notifications?.length > 0 && (
                   <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-red-500 text-xs text-white flex items-center justify-center">
                     {notifications.length}
                   </span>
@@ -66,62 +67,44 @@ const Header = ({ toggleSidebar }) => {
             </div>
             
             {/* Profile dropdown */}
-            <div className="relative" ref={profileMenuRef}>
+            <div className="relative" ref={dropdownRef}>
               <button 
                 className="flex items-center space-x-2 text-gray-500 hover:text-gray-600"
-                onClick={() => setShowProfileMenu(!showProfileMenu)}
+                onClick={() => setShowDropdown(!showDropdown)}
               >
-                <div className="flex items-center space-x-3">
-                  <div className="flex-shrink-0">
-                    {user?.avatar_url ? (
-                      <img
-                        src={user.avatar_url}
-                        alt="Profile"
-                        className="h-8 w-8 rounded-full"
-                      />
-                    ) : (
-                      <div className="h-8 w-8 rounded-full bg-primary-100 flex items-center justify-center">
-                        <User className="h-5 w-5 text-primary-600" />
-                      </div>
-                    )}
+                {user?.avatar_url ? (
+                  <img
+                    src={user.avatar_url}
+                    alt="Profile"
+                    className="h-8 w-8 rounded-full"
+                  />
+                ) : (
+                  <div className="h-8 w-8 bg-primary-100 rounded-full flex items-center justify-center">
+                    <User className="h-5 w-5 text-primary-600" />
                   </div>
-                  
-                  <div className="hidden md:block">
-                    <div className="text-sm font-medium text-gray-700">
-                      {user?.full_name || 'User'}
-                    </div>
-                    <div className="text-xs text-gray-500">
-                      {user?.currency || 'USD'}
-                    </div>
-                  </div>
-                </div>
+                )}
+                <span className="hidden md:block text-sm font-medium text-gray-700">
+                  {user?.full_name ? user.full_name.split(' ')[0] : 'User'}
+                </span>
               </button>
               
-              {/* Dropdown menu */}
-              {showProfileMenu && (
+              {showDropdown && (
                 <div className="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none">
                   <div className="py-1">
-                    <Link 
-                      to="/app/profile" 
+                    <Link
+                      to="/app/profile"
                       className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                      onClick={() => setShowProfileMenu(false)}
+                      onClick={() => setShowDropdown(false)}
                     >
                       <User className="mr-3 h-4 w-4" />
-                      Profile
+                      My Profile
                     </Link>
-                    
-                    <Link 
-                      to="/app/settings" 
-                      className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                      onClick={() => setShowProfileMenu(false)}
-                    >
-                      <Settings className="mr-3 h-4 w-4" />
-                      Settings
-                    </Link>
-                    
                     <button
-                      className="flex w-full items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                      onClick={handleSignOut}
+                      onClick={() => {
+                        setShowDropdown(false);
+                        handleSignOut();
+                      }}
+                      className="flex items-center w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                     >
                       <LogOut className="mr-3 h-4 w-4" />
                       Sign out

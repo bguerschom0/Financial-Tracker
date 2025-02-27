@@ -4,6 +4,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './hooks/useAuth';
 import { NotificationProvider } from './hooks/useNotification';
 import MainLayout from './components/layout/MainLayout';
+import AutoLogout from './components/layout/AutoLogout';
 
 // Lazy load pages for better performance
 const DashboardPage = React.lazy(() => import('./pages/dashboard'));
@@ -13,7 +14,7 @@ const DebtsPage = React.lazy(() => import('./pages/debts'));
 const SavingsPage = React.lazy(() => import('./pages/savings'));
 const ReportsPage = React.lazy(() => import('./pages/reports'));
 const ProfilePage = React.lazy(() => import('./pages/profile'));
-const SettingsPage = React.lazy(() => import('./pages/settings'));
+const UserManagementPage = React.lazy(() => import('./pages/admin/UserManagement'));
 const LandingPage = React.lazy(() => import('./pages/LandingPage'));
 const NotFound = React.lazy(() => import('./pages/NotFound'));
 const Login = React.lazy(() => import('./pages/Login'));
@@ -55,6 +56,7 @@ const App = () => {
               {/* Protected routes */}
               <Route path="/app" element={
                 <PrivateRoute>
+                  <AutoLogout />
                   <MainLayout />
                 </PrivateRoute>
               }>
@@ -65,7 +67,7 @@ const App = () => {
                 <Route path="savings" element={<SavingsPage />} />
                 <Route path="reports" element={<ReportsPage />} />
                 <Route path="profile" element={<ProfilePage />} />
-                <Route path="settings" element={<SettingsPage />} />
+                <Route path="admin/users" element={<UserManagementPage />} />
               </Route>
               
               {/* Handle 404s */}

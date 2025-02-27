@@ -1,335 +1,223 @@
 // src/pages/profile/index.jsx
-import React, { useState } from 'react';
-import  Card  from '../../components/ui/Card';
-import  Button  from '../../components/ui/Button';
-import  Input  from '../../components/ui/Input';
-import  Badge  from '../../components/ui/Badge';
-import  Alert  from '../../components/ui/Alert';
+import React, { useState, useEffect } from 'react';
+import Card from '../../components/ui/Card';
+import Button from '../../components/ui/Button';
+import Alert from '../../components/ui/Alert';
+import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import { useAuth } from '../../hooks/useAuth';
-import { Camera, Key, Shield, Bell } from 'lucide-react';
+import { api } from '../../lib/api';
+import CurrencySelector, { SUPPORTED_CURRENCIES } from '../../components/ui/CurrencySelector';
 
 const ProfilePage = () => {
-  const { user } = useAuth();
-  const [isEditing, setIsEditing] = useState(false);
-  
-  const [profile, setProfile] = useState({
-    fullName: 'John Doe',
-    email: 'john.doe@example.com',
-    phone: '+1 (555) 123-4567',
-    avatar: null,
-    joinDate: '2024-01-01',
-    lastLogin: '2024-02-24 10:30 AM'
+  const { user, updateUser } = useAuth();
+  const [formData, setFormData] = useState({
+    full_name: '',
+    currency: 'USD',
+    language: 'en',
+    timezone: 'UTC'
   });
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [message, setMessage] = useState(null);
 
-  const handleAvatarChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setProfile(prev => ({ ...prev, avatar: reader.result }));
-      };
-      reader.readAsDataURL(file);
+  // Load user data
+  useEffect(() => {
+    const loadProfile = async () => {
+      if (!user) {
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        setIsLoading(true);
+        const profile = await api.getProfile();
+
+        setFormData({
+          full_name: profile.full_name || '',
+          currency: profile.currency || 'USD',
+          language: profile.language || 'en',
+          timezone: profile.timezone || 'UTC'
+        });
+      } catch (error) {
+        console.error('Error loading profile:', error);
+        setMessage({
+          type: 'error',
+          text: 'Failed to load profile. Please try again.'
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadProfile();
+  }, [user]);
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleCurrencyChange = (currency) => {
+    setFormData(prev => ({
+      ...prev,
+      currency
+    }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    try {
+      setIsSaving(true);
+      setMessage(null);
+
+      const updatedProfile = await api.updateProfile(formData);
+      
+      if (updateUser) {
+        updateUser(updatedProfile);
+      }
+
+      setMessage({
+        type: 'success',
+        text: 'Profile updated successfully!'
+      });
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      setMessage({
+        type: 'error',
+        text: 'Failed to update profile. Please try again.'
+      });
+    } finally {
+      setIsSaving(false);
     }
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    // Save profile changes
-    setIsEditing(false);
-  };
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <LoadingSpinner size="lg" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Profile</h1>
+        <h1 className="text-2xl font-bold text-gray-900">Profile Settings</h1>
         <p className="mt-1 text-sm text-gray-500">
-          Manage your personal information and account settings
+          Update your account information and preferences
         </p>
       </div>
 
-      {/* Profile Overview */}
+      {message && (
+        <Alert type={message.type} dismissible onDismiss={() => setMessage(null)}>
+          {message.text}
+        </Alert>
+      )}
+
       <Card>
-        <div className="flex flex-col sm:flex-row items-center gap-6 p-6">
-          <div className="relative">
-            <div className="w-32 h-32 rounded-full overflow-hidden bg-gray-100">
-              {profile.avatar ? (
-                <img 
-                  src={profile.avatar} 
-                  alt="Profile" 
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center text-gray-400">
-                  <Camera size={40} />
-                </div>
-              )}
-            </div>
-            <label className="absolute bottom-0 right-0 bg-white rounded-full p-2 shadow-lg cursor-pointer">
-              <Camera size={20} className="text-gray-600" />
-              <input 
-                type="file" 
-                className="hidden" 
-                accept="image/*"
-                onChange={handleAvatarChange}
-              />
-            </label>
-          </div>
-
-          <div className="flex-1 text-center sm:text-left">
-            <h2 className="text-2xl font-bold text-gray-900">{profile.fullName}</h2>
-            <p className="text-gray-500">{profile.email}</p>
-            <div className="mt-2 flex flex-wrap gap-2 justify-center sm:justify-start">
-              <Badge variant="primary">Premium Member</Badge>
-              <Badge variant="success">Email Verified</Badge>
-              <Badge variant="default">2FA Enabled</Badge>
-            </div>
-          </div>
-
-          <div className="flex gap-2">
-            <Button
-              variant="secondary"
-              onClick={() => setIsEditing(!isEditing)}
-            >
-              {isEditing ? 'Cancel' : 'Edit Profile'}
-            </Button>
-          </div>
-        </div>
-      </Card>
-
-      {/* Account Details */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Personal Information */}
-        <Card title="Personal Information">
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <Input
-              label="Full Name"
-              value={profile.fullName}
-              onChange={(e) => setProfile({ ...profile, fullName: e.target.value })}
-              disabled={!isEditing}
-            />
-            <Input
-              label="Email"
-              type="email"
-              value={profile.email}
-              onChange={(e) => setProfile({ ...profile, email: e.target.value })}
-              disabled={!isEditing}
-            />
-            <Input
-              label="Phone"
-              value={profile.phone}
-              onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
-              disabled={!isEditing}
-            />
-            {isEditing && (
-              <div className="flex justify-end">
-                <Button type="submit">Save Changes</Button>
-              </div>
-            )}
-          </form>
-        </Card>
-
-        {/* Account Activity */}
-        <Card title="Account Activity">
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h4 className="text-sm font-medium text-gray-900">Member Since</h4>
-                <p className="text-sm text-gray-500">{profile.joinDate}</p>
-              </div>
-              <Shield className="text-green-500" />
-            </div>
-            <div className="flex items-center justify-between">
-              <div>
-                <h4 className="text-sm font-medium text-gray-900">Last Login</h4>
-                <p className="text-sm text-gray-500">{profile.lastLogin}</p>
-              </div>
-              <Key className="text-blue-500" />
-            </div>
-            <div className="flex items-center justify-between">
-              <div>
-                <h4 className="text-sm font-medium text-gray-900">Notifications</h4>
-                <p className="text-sm text-gray-500">Email & Push enabled</p>
-              </div>
-              <Bell className="text-purple-500" />
-            </div>
-          </div>
-        </Card>
-
-        {/* Security Settings */}
-        <Card title="Security Settings">
-          <div className="space-y-4">
-            <div>
-              <h4 className="text-sm font-medium text-gray-900">Two-Factor Authentication</h4>
-              <p className="text-sm text-gray-500 mt-1">Add an extra layer of security to your account</p>
-              <Button variant="secondary" className="mt-2">
-                Manage 2FA
-              </Button>
-            </div>
-            <div>
-              <h4 className="text-sm font-medium text-gray-900">Password</h4>
-              <p className="text-sm text-gray-500 mt-1">Last changed 30 days ago</p>
-              <Button variant="secondary" className="mt-2">
-                Change Password
-              </Button>
-            </div>
-            <div>
-              <h4 className="text-sm font-medium text-gray-900">Login Sessions</h4>
-              <p className="text-sm text-gray-500 mt-1">Manage your active sessions</p>
-              <Button variant="secondary" className="mt-2">
-                View Sessions
-              </Button>
-            </div>
-          </div>
-        </Card>
-
-        {/* Preferences */}
-        <Card title="Preferences">
-          <div className="space-y-4">
-            <div>
-              <h4 className="text-sm font-medium text-gray-900">Email Notifications</h4>
-              <div className="mt-2 space-y-2">
-                <label className="flex items-center">
-                  <input
-                    type="checkbox"
-                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                    defaultChecked
-                  />
-                  <span className="ml-2 text-sm text-gray-600">
-                    Budget alerts
-                  </span>
-                </label>
-                <label className="flex items-center">
-                  <input
-                    type="checkbox"
-                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                    defaultChecked
-                  />
-                  <span className="ml-2 text-sm text-gray-600">
-                    Bill reminders
-                  </span>
-                </label>
-                <label className="flex items-center">
-                  <input
-                    type="checkbox"
-                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                    defaultChecked
-                  />
-                  <span className="ml-2 text-sm text-gray-600">
-                    Monthly reports
-                  </span>
-                </label>
-              </div>
-            </div>
-            <div>
-              <h4 className="text-sm font-medium text-gray-900">Language & Region</h4>
-              <div className="grid grid-cols-2 gap-4 mt-2">
-                <select
-                  className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                  defaultValue="en"
-                >
-                  <option value="en">English</option>
-                  <option value="es">Spanish</option>
-                  <option value="fr">French</option>
-                </select>
-                <select
-                  className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                  defaultValue="USD"
-                >
-                  <option value="USD">USD ($)</option>
-                  <option value="EUR">EUR (€)</option>
-                  <option value="GBP">GBP (£)</option>
-                </select>
-              </div>
-            </div>
-          </div>
-        </Card>
-      </div>
-
-      {/* Connected Accounts */}
-      <Card title="Connected Accounts">
-        <div className="space-y-4">
-          <div className="flex items-center justify-between py-4">
-            <div className="flex items-center">
-              <div className="w-12 h-12 flex items-center justify-center rounded-full bg-gray-100">
-                <img 
-                  src="/google-icon.png" 
-                  alt="Google" 
-                  className="w-6 h-6"
-                />
-              </div>
-              <div className="ml-4">
-                <h4 className="text-sm font-medium text-gray-900">Google</h4>
-                <p className="text-sm text-gray-500">
-                  Connected for single sign-on
-                </p>
-              </div>
-            </div>
-            <Button variant="secondary" size="sm">
-              Disconnect
-            </Button>
-          </div>
-          <div className="flex items-center justify-between py-4 border-t">
-            <div className="flex items-center">
-              <div className="w-12 h-12 flex items-center justify-center rounded-full bg-gray-100">
-                <img 
-                  src="/bank-icon.png" 
-                  alt="Bank" 
-                  className="w-6 h-6"
-                />
-              </div>
-              <div className="ml-4">
-                <h4 className="text-sm font-medium text-gray-900">Bank Account</h4>
-                <p className="text-sm text-gray-500">
-                  Connected for transactions
-                </p>
-              </div>
-            </div>
-            <Button variant="secondary" size="sm">
-              Manage
-            </Button>
-          </div>
-        </div>
-      </Card>
-
-      {/* Data & Privacy */}
-      <Card title="Data & Privacy">
-        <div className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Full Name */}
           <div>
-            <h4 className="text-sm font-medium text-gray-900">Data Export</h4>
-            <p className="text-sm text-gray-500 mt-1">
-              Download a copy of your data
-            </p>
-            <Button variant="secondary" className="mt-2">
-              Export Data
-            </Button>
-          </div>
-          <div className="border-t pt-4">
-            <h4 className="text-sm font-medium text-gray-900">Privacy Settings</h4>
-            <div className="mt-2 space-y-2">
-              <label className="flex items-center">
-                <input
-                  type="checkbox"
-                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                  defaultChecked
-                />
-                <span className="ml-2 text-sm text-gray-600">
-                  Share usage data to improve service
-                </span>
-              </label>
-              <label className="flex items-center">
-                <input
-                  type="checkbox"
-                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                  defaultChecked
-                />
-                <span className="ml-2 text-sm text-gray-600">
-                  Receive personalized recommendations
-                </span>
-              </label>
+            <label htmlFor="full_name" className="block text-sm font-medium text-gray-700">
+              Full Name
+            </label>
+            <div className="mt-1">
+              <input
+                type="text"
+                id="full_name"
+                name="full_name"
+                value={formData.full_name}
+                onChange={handleChange}
+                className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                disabled={isSaving}
+              />
             </div>
           </div>
-        </div>
+
+          {/* Currency */}
+          <div>
+            <label htmlFor="currency" className="block text-sm font-medium text-gray-700">
+              Default Currency
+            </label>
+            <div className="mt-1">
+              <CurrencySelector
+                value={formData.currency}
+                onChange={handleCurrencyChange}
+                disabled={isSaving}
+              />
+              <p className="mt-1 text-xs text-gray-500">
+                This will be used as the default currency for all your transactions.
+              </p>
+            </div>
+          </div>
+
+          {/* Language */}
+          <div>
+            <label htmlFor="language" className="block text-sm font-medium text-gray-700">
+              Language
+            </label>
+            <div className="mt-1">
+              <select
+                id="language"
+                name="language"
+                value={formData.language}
+                onChange={handleChange}
+                className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                disabled={isSaving}
+              >
+                <option value="en">English</option>
+                <option value="fr">French</option>
+                <option value="es">Spanish</option>
+                <option value="de">German</option>
+                <option value="zh">Chinese</option>
+                <option value="rw">Kinyarwanda</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Timezone */}
+          <div>
+            <label htmlFor="timezone" className="block text-sm font-medium text-gray-700">
+              Timezone
+            </label>
+            <div className="mt-1">
+              <select
+                id="timezone"
+                name="timezone"
+                value={formData.timezone}
+                onChange={handleChange}
+                className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                disabled={isSaving}
+              >
+                <option value="UTC">UTC (Coordinated Universal Time)</option>
+                <option value="America/New_York">Eastern Time (US & Canada)</option>
+                <option value="America/Chicago">Central Time (US & Canada)</option>
+                <option value="America/Denver">Mountain Time (US & Canada)</option>
+                <option value="America/Los_Angeles">Pacific Time (US & Canada)</option>
+                <option value="Europe/London">London</option>
+                <option value="Europe/Paris">Paris</option>
+                <option value="Africa/Kigali">Kigali</option>
+                <option value="Africa/Nairobi">Nairobi</option>
+                <option value="Asia/Tokyo">Tokyo</option>
+                <option value="Australia/Sydney">Sydney</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Submit Button */}
+          <div className="flex justify-end">
+            <Button
+              type="submit"
+              isLoading={isSaving}
+            >
+              Save Changes
+            </Button>
+          </div>
+        </form>
       </Card>
     </div>
   );

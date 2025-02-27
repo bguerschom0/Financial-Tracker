@@ -2,6 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import Button from '../ui/Button';
 
+const LOCAL_STORAGE_KEY = 'transaction_form_data';
+
 const TransactionForm = ({ 
   type = 'expense',
   initialData = null, 
@@ -19,26 +21,60 @@ const TransactionForm = ({
     currency: defaultCurrency
   };
 
-  const [formData, setFormData] = useState(initialData || defaultData);
-  const [errors, setErrors] = useState({});
-
-  // Update form when initialData changes (for editing)
-  useEffect(() => {
+  // Initialize form data from local storage or props
+  const [formData, setFormData] = useState(() => {
+    // If we have initialData (editing mode), use that
     if (initialData) {
-      setFormData({
+      return {
         ...initialData,
         // Ensure date is in the correct format
         date: initialData.date ? new Date(initialData.date).toISOString().split('T')[0] : defaultData.date,
         // Ensure currency is set
         currency: initialData.currency || defaultCurrency
-      });
-    } else {
-      setFormData({
-        ...defaultData,
-        currency: defaultCurrency
-      });
+      };
     }
-  }, [initialData, defaultCurrency]);
+    
+    // Otherwise, try to get saved data from localStorage
+    try {
+      const savedForm = localStorage.getItem(LOCAL_STORAGE_KEY);
+      if (savedForm) {
+        const parsedForm = JSON.parse(savedForm);
+        // Only use saved form if it's the same type (income/expense)
+        if (parsedForm.type === type) {
+          return parsedForm;
+        }
+      }
+    } catch (err) {
+      console.error('Error loading saved form data:', err);
+    }
+    
+    // Fall back to default data
+    return { ...defaultData, type };
+  });
+  
+  const [errors, setErrors] = useState({});
+
+  // Save form data to localStorage when it changes
+  useEffect(() => {
+    if (!initialData && !isSubmitting) { // Don't save when in edit mode or submitting
+      try {
+        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify({ ...formData, type }));
+      } catch (err) {
+        console.error('Error saving form data:', err);
+      }
+    }
+  }, [formData, initialData, isSubmitting, type]);
+
+  // Clear saved form data after successful submission
+  useEffect(() => {
+    if (!isSubmitting) return;
+    
+    try {
+      localStorage.removeItem(LOCAL_STORAGE_KEY);
+    } catch (err) {
+      console.error('Error removing saved form data:', err);
+    }
+  }, [isSubmitting]);
 
   const validateForm = () => {
     const newErrors = {};

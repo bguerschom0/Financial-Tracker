@@ -3,7 +3,8 @@ import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { 
   Home, DollarSign, CreditCard, 
-  Wallet, PiggyBank, Settings, X 
+  Wallet, PiggyBank, Settings, X,
+  BarChart, FileText, User
 } from 'lucide-react';
 
 const navigation = [
@@ -12,12 +13,14 @@ const navigation = [
   { name: 'Expenses', href: '/app/expenses', icon: CreditCard },
   { name: 'Debts', href: '/app/debts', icon: Wallet },
   { name: 'Savings', href: '/app/savings', icon: PiggyBank },
+  { name: 'Reports', href: '/app/reports', icon: BarChart },
+  { name: 'Profile', href: '/app/profile', icon: User },
   { name: 'Settings', href: '/app/settings', icon: Settings }
 ];
 
 const Sidebar = ({ isOpen, onClose }) => {
   const location = useLocation();
-
+  
   return (
     <>
       {/* Mobile backdrop */}
@@ -28,7 +31,7 @@ const Sidebar = ({ isOpen, onClose }) => {
           aria-hidden="true"
         />
       )}
-
+      
       {/* Sidebar */}
       <div 
         className={`
@@ -47,7 +50,7 @@ const Sidebar = ({ isOpen, onClose }) => {
               <X size={20} />
             </button>
           </div>
-
+          
           {/* Logo */}
           <div className="flex-shrink-0 px-6 py-4 flex items-center">
             <DollarSign className="h-8 w-8 text-primary-600" />
@@ -55,7 +58,7 @@ const Sidebar = ({ isOpen, onClose }) => {
               Financial Tracker
             </span>
           </div>
-
+          
           {/* Navigation */}
           <nav className="flex-1 px-4 py-4 space-y-1 overflow-y-auto">
             {navigation.map((item) => {
@@ -84,6 +87,11 @@ const Sidebar = ({ isOpen, onClose }) => {
               );
             })}
           </nav>
+          
+          {/* App Version */}
+          <div className="px-6 py-4 text-xs text-gray-400">
+            Version 1.0.0
+          </div>
         </div>
       </div>
     </>

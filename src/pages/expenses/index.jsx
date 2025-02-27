@@ -1,40 +1,72 @@
 // src/pages/expenses/index.jsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Plus } from 'lucide-react';
-import  Card  from '../../components/ui/Card';
-import  Button  from '../../components/ui/Button';
-import  Modal  from '../../components/ui/Modal';
-import  LoadingSpinner  from '../../components/ui/LoadingSpinner';
-import  Alert  from '../../components/ui/Alert';
-import  EmptyState  from '../../components/ui/EmptyState';
-import  Badge  from '../../components/ui/Badge';
+import Card from '../../components/ui/Card';
+import Button from '../../components/ui/Button';
+import Modal from '../../components/ui/Modal';
+import LoadingSpinner from '../../components/ui/LoadingSpinner';
+import Alert from '../../components/ui/Alert';
+import EmptyState from '../../components/ui/EmptyState';
+import Badge from '../../components/ui/Badge';
 import { useTransactions } from '../../hooks/useTransactions';
 import { formatCurrency, formatDate } from '../../utils/formatting';
 import TransactionForm from '../../components/forms/TransactionForm';
+import { useAuth } from '../../hooks/useAuth';
 
 const ExpensesPage = () => {
   const [showAddModal, setShowAddModal] = useState(false);
   const [selectedTransaction, setSelectedTransaction] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { user } = useAuth();
+  const [userCurrency, setUserCurrency] = useState('USD');
+  
+  // Use the hook with the specific type filter
   const { 
     transactions, 
     loading, 
     error,
     addTransaction,
     updateTransaction,
-    deleteTransaction 
+    deleteTransaction,
+    refreshTransactions
   } = useTransactions({ type: 'expense' });
+
+  // Get user's preferred currency
+  useEffect(() => {
+    if (user && user.currency) {
+      setUserCurrency(user.currency);
+    }
+  }, [user]);
 
   const handleSubmit = async (data) => {
     try {
+      setIsSubmitting(true);
+      
+      // Ensure amount is a number
+      const formattedData = {
+        ...data,
+        amount: parseFloat(data.amount),
+        date: data.date || new Date().toISOString().split('T')[0],
+        currency: data.currency || userCurrency // Include currency in transaction data
+      };
+      
       if (selectedTransaction) {
-        await updateTransaction(selectedTransaction.id, data);
+        await updateTransaction(selectedTransaction.id, formattedData);
       } else {
-        await addTransaction({ ...data, type: 'expense' });
+        await addTransaction({ ...formattedData, type: 'expense' });
       }
+      
+      // Close modal and reset selected transaction
       setShowAddModal(false);
       setSelectedTransaction(null);
+      
+      // Refresh the transactions list
+      refreshTransactions();
+      
     } catch (err) {
       console.error('Error saving transaction:', err);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -46,28 +78,71 @@ const ExpensesPage = () => {
   const handleDelete = async (id) => {
     if (window.confirm('Are you sure you want to delete this expense?')) {
       try {
+        setIsSubmitting(true);
         await deleteTransaction(id);
       } catch (err) {
         console.error('Error deleting transaction:', err);
+      } finally {
+        setIsSubmitting(false);
       }
     }
   };
 
   // Calculate totals and categories
-  const totalExpenses = transactions.reduce((sum, t) => sum + t.amount, 0);
-  const expensesByCategory = transactions.reduce((acc, t) => {
-    acc[t.category] = (acc[t.category] || 0) + t.amount;
-    return acc;
-  }, {});
+  const calculateTotal = () => {
+    return transactions.reduce((sum, t) => {
+      // Handle numeric conversion
+      const amount = typeof t.amount === 'string' ? parseFloat(t.amount) : t.amount;
+      return sum + (isNaN(amount) ? 0 : amount);
+    }, 0);
+  };
+
+  const calculateExpensesByCategory = () => {
+    return transactions.reduce((acc, t) => {
+      const category = t.category || 'Other';
+      const amount = typeof t.amount === 'string' ? parseFloat(t.amount) : t.amount;
+      
+      if (!acc[category]) {
+        acc[category] = 0;
+      }
+      
+      acc[category] += (isNaN(amount) ? 0 : amount);
+      return acc;
+    }, {});
+  };
+
+  // Calculate monthly totals
+  const calculateMonthlyTotal = () => {
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+    
+    return transactions
+      .filter(t => {
+        const date = new Date(t.date);
+        return date.getMonth() === currentMonth && date.getFullYear() === currentYear;
+      })
+      .reduce((sum, t) => {
+        const amount = typeof t.amount === 'string' ? parseFloat(t.amount) : t.amount;
+        return sum + (isNaN(amount) ? 0 : amount);
+      }, 0);
+  };
+
+  const totalExpenses = calculateMonthlyTotal();
+  const expensesByCategory = calculateExpensesByCategory();
 
   if (loading) {
-    return <LoadingSpinner size="lg" className="mt-8" />;
+    return (
+      <div className="flex justify-center items-center h-64">
+        <LoadingSpinner size="lg" />
+      </div>
+    );
   }
 
   if (error) {
     return (
       <Alert type="error" className="mt-4">
-        Error loading expense data. Please try again later.
+        Error loading expense data: {error}. Please try again later.
       </Alert>
     );
   }
@@ -85,6 +160,7 @@ const ExpensesPage = () => {
         <Button
           onClick={() => setShowAddModal(true)}
           className="sm:self-start"
+          disabled={isSubmitting}
         >
           <Plus className="h-5 w-5 mr-2" />
           Add Expense
@@ -97,9 +173,9 @@ const ExpensesPage = () => {
           <div className="space-y-1">
             <h3 className="text-lg font-medium text-gray-700">Total Expenses</h3>
             <p className="text-3xl font-bold text-red-600">
-              {formatCurrency(totalExpenses)}
+              {formatCurrency(totalExpenses, userCurrency)}
             </p>
-            <p className="text-sm text-gray-500">Current Month</p>
+            <p className="text-sm text-gray-500">Current Month ({userCurrency})</p>
           </div>
         </Card>
 
@@ -113,7 +189,7 @@ const ExpensesPage = () => {
                   variant="default"
                   className="text-sm"
                 >
-                  {category}: {formatCurrency(amount)}
+                  {category}: {formatCurrency(amount, userCurrency)}
                 </Badge>
               ))}
             </div>
@@ -128,7 +204,7 @@ const ExpensesPage = () => {
             title="No expenses recorded"
             description="Start tracking your expenses by adding your first record"
             action={
-              <Button onClick={() => setShowAddModal(true)}>
+              <Button onClick={() => setShowAddModal(true)} disabled={isSubmitting}>
                 <Plus className="h-5 w-5 mr-2" />
                 Add Expense
               </Button>
@@ -167,22 +243,27 @@ const ExpensesPage = () => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       <Badge variant="default">
-                        {transaction.category}
+                        {transaction.category || 'Other'}
                       </Badge>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-red-600">
-                      {formatCurrency(transaction.amount)}
+                      {formatCurrency(
+                        parseFloat(transaction.amount) || 0, 
+                        transaction.currency || userCurrency
+                      )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <button
                         onClick={() => handleEdit(transaction)}
                         className="text-primary-600 hover:text-primary-900 mr-4"
+                        disabled={isSubmitting}
                       >
                         Edit
                       </button>
                       <button
                         onClick={() => handleDelete(transaction.id)}
                         className="text-red-600 hover:text-red-900"
+                        disabled={isSubmitting}
                       >
                         Delete
                       </button>
@@ -199,8 +280,10 @@ const ExpensesPage = () => {
       <Modal
         isOpen={showAddModal}
         onClose={() => {
-          setShowAddModal(false);
-          setSelectedTransaction(null);
+          if (!isSubmitting) {
+            setShowAddModal(false);
+            setSelectedTransaction(null);
+          }
         }}
         title={selectedTransaction ? 'Edit Expense' : 'Add Expense'}
       >
@@ -209,9 +292,13 @@ const ExpensesPage = () => {
           initialData={selectedTransaction}
           onSubmit={handleSubmit}
           onCancel={() => {
-            setShowAddModal(false);
-            setSelectedTransaction(null);
+            if (!isSubmitting) {
+              setShowAddModal(false);
+              setSelectedTransaction(null);
+            }
           }}
+          isSubmitting={isSubmitting}
+          defaultCurrency={userCurrency}
         />
       </Modal>
     </div>

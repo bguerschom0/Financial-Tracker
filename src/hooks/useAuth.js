@@ -1,5 +1,5 @@
 // src/hooks/useAuth.js
-import { useState, useEffect, useContext, createContext } from 'react';
+import React, { useState, useEffect, useContext, createContext } from 'react';
 import { auth } from '../lib/auth';
 
 const AuthContext = createContext();
@@ -119,9 +119,11 @@ export function AuthProvider({ children }) {
     }
   };
 
-  return (
-    <AuthContext.Provider
-      value={{
+  // Using React.createElement instead of JSX
+  return React.createElement(
+    AuthContext.Provider,
+    {
+      value: {
         user,
         loading,
         error,
@@ -129,10 +131,9 @@ export function AuthProvider({ children }) {
         signIn,
         signOut,
         updateUser
-      }}
-    >
-      {children}
-    </AuthContext.Provider>
+      }
+    },
+    children
   );
 }
 

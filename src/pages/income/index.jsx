@@ -1,12 +1,12 @@
 // src/pages/income/index.jsx
 import React, { useState } from 'react';
 import { Plus } from 'lucide-react';
-import  Card  from '../../components/ui/Card';
-import  Button  from '../../components/ui/Button';
-import  Modal  from '../../components/ui/Modal';
-import  LoadingSpinner  from '../../components/ui/LoadingSpinner';
-import  Alert  from '../../components/ui/Alert';
-import  EmptyState  from '../../components/ui/EmptyState';
+import Card from '../../components/ui/Card';
+import Button from '../../components/ui/Button';
+import Modal from '../../components/ui/Modal';
+import LoadingSpinner from '../../components/ui/LoadingSpinner';
+import Alert from '../../components/ui/Alert';
+import EmptyState from '../../components/ui/EmptyState';
 import { useTransactions } from '../../hooks/useTransactions';
 import { formatCurrency, formatDate } from '../../utils/formatting';
 import TransactionForm from '../../components/forms/TransactionForm';
@@ -14,26 +14,47 @@ import TransactionForm from '../../components/forms/TransactionForm';
 const IncomePage = () => {
   const [showAddModal, setShowAddModal] = useState(false);
   const [selectedTransaction, setSelectedTransaction] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // Use the hook with the specific type filter
   const { 
     transactions, 
     loading, 
     error,
     addTransaction,
     updateTransaction,
-    deleteTransaction 
+    deleteTransaction,
+    refreshTransactions
   } = useTransactions({ type: 'income' });
 
   const handleSubmit = async (data) => {
     try {
+      setIsSubmitting(true);
+      
+      // Ensure amount is a number
+      const formattedData = {
+        ...data,
+        amount: parseFloat(data.amount),
+        date: data.date || new Date().toISOString().split('T')[0]
+      };
+      
       if (selectedTransaction) {
-        await updateTransaction(selectedTransaction.id, data);
+        await updateTransaction(selectedTransaction.id, formattedData);
       } else {
-        await addTransaction({ ...data, type: 'income' });
+        await addTransaction({ ...formattedData, type: 'income' });
       }
+      
+      // Close modal and reset selected transaction
       setShowAddModal(false);
       setSelectedTransaction(null);
+      
+      // Refresh the transactions list
+      refreshTransactions();
+      
     } catch (err) {
       console.error('Error saving transaction:', err);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -45,26 +66,47 @@ const IncomePage = () => {
   const handleDelete = async (id) => {
     if (window.confirm('Are you sure you want to delete this income record?')) {
       try {
+        setIsSubmitting(true);
         await deleteTransaction(id);
       } catch (err) {
         console.error('Error deleting transaction:', err);
+      } finally {
+        setIsSubmitting(false);
       }
     }
   };
 
+  // Calculate total income for current month
+  const calculateMonthlyTotal = () => {
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+    
+    return transactions
+      .filter(t => {
+        const date = new Date(t.date);
+        return date.getMonth() === currentMonth && date.getFullYear() === currentYear;
+      })
+      .reduce((sum, t) => sum + (parseFloat(t.amount) || 0), 0);
+  };
+
+  const totalIncome = transactions.length > 0 ? calculateMonthlyTotal() : 0;
+
   if (loading) {
-    return <LoadingSpinner size="lg" className="mt-8" />;
+    return (
+      <div className="flex justify-center items-center h-64">
+        <LoadingSpinner size="lg" />
+      </div>
+    );
   }
 
   if (error) {
     return (
       <Alert type="error" className="mt-4">
-        Error loading income data. Please try again later.
+        Error loading income data: {error}. Please try again later.
       </Alert>
     );
   }
-
-  const totalIncome = transactions.reduce((sum, t) => sum + t.amount, 0);
 
   return (
     <div className="space-y-6">
@@ -79,6 +121,7 @@ const IncomePage = () => {
         <Button
           onClick={() => setShowAddModal(true)}
           className="sm:self-start"
+          disabled={isSubmitting}
         >
           <Plus className="h-5 w-5 mr-2" />
           Add Income
@@ -103,7 +146,7 @@ const IncomePage = () => {
             title="No income records"
             description="Start by adding your first income record"
             action={
-              <Button onClick={() => setShowAddModal(true)}>
+              <Button onClick={() => setShowAddModal(true)} disabled={isSubmitting}>
                 <Plus className="h-5 w-5 mr-2" />
                 Add Income
               </Button>
@@ -144,18 +187,20 @@ const IncomePage = () => {
                       {transaction.category}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-green-600">
-                      {formatCurrency(transaction.amount)}
+                      {formatCurrency(parseFloat(transaction.amount) || 0)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <button
                         onClick={() => handleEdit(transaction)}
                         className="text-primary-600 hover:text-primary-900 mr-4"
+                        disabled={isSubmitting}
                       >
                         Edit
                       </button>
                       <button
                         onClick={() => handleDelete(transaction.id)}
                         className="text-red-600 hover:text-red-900"
+                        disabled={isSubmitting}
                       >
                         Delete
                       </button>
@@ -172,19 +217,24 @@ const IncomePage = () => {
       <Modal
         isOpen={showAddModal}
         onClose={() => {
-          setShowAddModal(false);
-          setSelectedTransaction(null);
+          if (!isSubmitting) {
+            setShowAddModal(false);
+            setSelectedTransaction(null);
+          }
         }}
         title={selectedTransaction ? 'Edit Income' : 'Add Income'}
       >
         <TransactionForm
           type="income"
-                    initialData={selectedTransaction}
+          initialData={selectedTransaction}
           onSubmit={handleSubmit}
           onCancel={() => {
-            setShowAddModal(false);
-            setSelectedTransaction(null);
+            if (!isSubmitting) {
+              setShowAddModal(false);
+              setSelectedTransaction(null);
+            }
           }}
+          isSubmitting={isSubmitting}
         />
       </Modal>
     </div>

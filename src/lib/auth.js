@@ -4,66 +4,95 @@ import bcrypt from 'bcryptjs'; // You'll need to install this package: npm insta
 
 export const auth = {
   // Sign up new user
-  async signUp({ username, password, full_name }) {
+async signUp({ username, password, full_name }) {
+  try {
+    console.log("Starting signup process for:", username);
+    
+    // First, check if username exists
+    const { data: existingUser, error: checkError } = await supabase
+      .from(TABLES.USERS)
+      .select('username')
+      .eq('username', username)
+      .single();
+    
+    if (checkError && checkError.code !== 'PGRST116') { // PGRST116 is not found
+      console.error("Error checking existing user:", checkError);
+      throw new Error(`Error checking username: ${checkError.message}`);
+    }
+    
+    if (existingUser) {
+      throw new Error('Username already exists');
+    }
+    
+    // Hash password with bcrypt
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+    console.log("Password hashed successfully");
+    
+    // Insert new user into Fusers table
+    console.log("Attempting to insert user into database");
+    const { data, error } = await supabase
+      .from(TABLES.USERS)
+      .insert([{
+        username,
+        password_hash: hashedPassword,
+        full_name,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }])
+      .select();
+    
+    if (error) {
+      console.error("Supabase insert error:", error);
+      throw new Error(`Database error: ${error.message}`);
+    }
+    
+    if (!data || data.length === 0) {
+      console.error("No data returned after insert");
+      throw new Error("User creation failed");
+    }
+    
+    console.log("User created successfully:", data[0].id);
+    
+    // Create session
     try {
-      // First, check if username exists
-      const { data: existingUser, error: checkError } = await supabase
-        .from(TABLES.USERS)
-        .select('username')
-        .eq('username', username)
-        .single();
+      const sessionToken = Math.random().toString(36).substring(2, 15) + 
+                          Math.random().toString(36).substring(2, 15);
       
-      if (existingUser) {
-        throw new Error('Username already exists');
-      }
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + 7); // Session expires in 7 days
       
-      // Hash password with bcrypt
-      const salt = await bcrypt.genSalt(10);
-      const hashedPassword = await bcrypt.hash(password, salt);
-      
-      // Insert new user into Fusers table
-      const { data, error } = await supabase
-        .from(TABLES.USERS)
+      const { error: sessionError } = await supabase
+        .from(TABLES.SESSIONS)
         .insert([{
-          username,
-          password_hash: hashedPassword, // Store the hashed password
-          full_name,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        }])
-        .select();
+          user_id: data[0].id,
+          token: sessionToken,
+          expires_at: expiresAt.toISOString(),
+          ip_address: '127.0.0.1', // In production, get real IP
+          user_agent: navigator.userAgent
+        }]);
       
-      if (error) throw error;
-      
-      // Create session
-      if (data && data[0]) {
-        const sessionToken = Math.random().toString(36).substring(2, 15) + 
-                            Math.random().toString(36).substring(2, 15);
-        
-        const expiresAt = new Date();
-        expiresAt.setDate(expiresAt.getDate() + 7); // Session expires in 7 days
-        
-        await supabase
-          .from(TABLES.SESSIONS)
-          .insert([{
-            user_id: data[0].id,
-            token: sessionToken,
-            expires_at: expiresAt.toISOString(),
-            ip_address: '127.0.0.1', // In production, get real IP
-            user_agent: navigator.userAgent
-          }]);
-        
+      if (sessionError) {
+        console.error("Session creation error:", sessionError);
+        // Continue despite session error
+      } else {
         // Save session in localStorage
         localStorage.setItem('session_token', sessionToken);
         localStorage.setItem('user', JSON.stringify(data[0]));
+        console.log("Session created successfully");
       }
-      
-      return data;
-    } catch (error) {
-      console.error('Error signing up:', error.message);
-      throw error;
+    } catch (sessionErr) {
+      console.error("Error in session creation:", sessionErr);
+      // Continue despite session error
     }
-  },
+    
+    return data;
+  } catch (error) {
+    console.error('Error signing up:', error);
+    console.error('Error details:', JSON.stringify(error, null, 2));
+    throw error;
+  }
+}
   
   // Sign in existing user
   async signIn({ username, password }) {
